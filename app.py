@@ -1,44 +1,55 @@
 """Entrypoint."""
 
-import numpy as np
-import pandas as pd
 import streamlit as st
 
-st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(layout="wide", initial_sidebar_state="expanded")
 
 with st.sidebar:
-    add_radio = st.radio(
-        "Choose a shipping method", ("Standard (5-15 days)", "Express (2-5 days)")
-    )
+    st.metric(label="Gas price", value=4, delta=-0.5, delta_color="inverse")
+    st.metric(label="Gas price", value=4, delta=-0.5, delta_color="inverse")
+    st.metric(label="Gas price", value=4, delta=-0.5, delta_color="inverse")
+    st.metric(label="Gas price", value=4, delta=-0.5, delta_color="inverse")
+    st.metric(label="Gas price", value=4, delta=-0.5, delta_color="inverse")
+    st.metric(label="Gas price", value=4, delta=-0.5, delta_color="inverse")
+    st.metric(label="Gas price", value=4, delta=-0.5, delta_color="inverse")
+    st.metric(label="Gas price", value=4, delta=-0.5, delta_color="inverse")
+    st.metric(label="Gas price", value=4, delta=-0.5, delta_color="inverse")
+    st.metric(label="Gas price", value=4, delta=-0.5, delta_color="inverse")
+    st.metric(label="Gas price", value=4, delta=-0.5, delta_color="inverse")
+    st.metric(label="Gas price", value=4, delta=-0.5, delta_color="inverse")
+    st.metric(label="Gas price", value=4, delta=-0.5, delta_color="inverse")
+    st.metric(label="Gas price", value=4, delta=-0.5, delta_color="inverse")
+    st.metric(label="Gas price", value=4, delta=-0.5, delta_color="inverse")
+    st.metric(label="Gas price", value=4, delta=-0.5, delta_color="inverse")
+    st.metric(label="Gas price", value=4, delta=-0.5, delta_color="inverse")
+    st.metric(label="Gas price", value=4, delta=-0.5, delta_color="inverse")
+    st.metric(label="Gas price", value=4, delta=-0.5, delta_color="inverse")
+    st.metric(label="Gas price", value=4, delta=-0.5, delta_color="inverse")
+    st.metric(label="Gas price", value=4, delta=-0.5, delta_color="inverse")
 
-col1, col2, col3, col4, col5 = st.columns(5)
-col1.metric("Temperature", "70 °F", "1.2 °F")
-col2.metric("Wind", "9 mph", "-8%")
-col3.metric("Humidity", "86%", "4%")
-col4.metric("Humidity", "86%", "4%")
-col5.metric("Humidity", "86%", "4%")
+# Initialize chat history
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
+# Display chat messages from history on app rerun
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-df = pd.DataFrame(
-    {
-        "col1": np.random.randn(1000) / 50 + 37.76,
-        "col2": np.random.randn(1000) / 50 + -122.4,
-        "col3": np.random.randn(1000) * 100,
-        "col4": np.random.rand(1000, 4).tolist(),
-    }
-)
+# React to user input
+if prompt := st.chat_input("What is up?"):
+    # Display user message in chat message container
+    st.chat_message("user").markdown(prompt)
+    # Add user message to chat history
+    st.session_state.messages.append({"role": "user", "content": prompt})
 
-st.map(df, latitude="col1", longitude="col2", size="col3", color="col4")
+    response = f"Echo: {prompt}"
+    # Display assistant response in chat message container
+    with st.chat_message("assistant"):
+        st.markdown(response)
+        with st.popover("Open popover"):
+            st.markdown("Hello World 👋")
+            name = st.text_input("What's your name?")
 
-with st.container(height=480, border=False):
-    with st.chat_message("user"):
-        st.write("Hello 👋")
-        st.line_chart(np.random.randn(30, 3))
-
-    with st.chat_message("user"):
-        st.write("Hello 👋")
-        st.line_chart(np.random.randn(30, 3))
-
-prompt = st.chat_input("Say something")
-if prompt:
-    st.write(f"User has sent the following prompt: {prompt}")
+    # Add assistant response to chat history
+    st.session_state.messages.append({"role": "assistant", "content": response})
