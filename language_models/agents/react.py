@@ -94,6 +94,7 @@ class AgentResponse(BaseModel):
     prompt: str
     final_answer: dict[str, Any]
     chain_of_thought: list[dict[str, Any]]
+    last_tool: dict[str, Any] | None
 
 
 class ReActAgent(BaseModel):
@@ -124,9 +125,14 @@ class ReActAgent(BaseModel):
             response = json.loads(response, strict=False)
             response = LLMResponse.model_validate(response)
             observation = None
-        except json.decoder.JSONDecodeError as e:
+        except json.decoder.JSONDecodeError:
             response = None
-            observation = f"Your response format was incorrect. The error was: {e}"
+            observation = (
+                "Your response format was incorrect."
+                + " Always use the following JSON format:"
+                + ' {"thought": "You should always think about what to do consider previous and subsequent steps",'
+                + ' "tool": "The tool to use", "tool_input": "Valid key value pairs"}"'
+            )
         except ValidationError as e:
             response = None
             observation = f"Your response failed validation. The error was: {e}"
@@ -145,6 +151,7 @@ class ReActAgent(BaseModel):
             ChatMessage(role=ChatMessageRole.USER, content=prompt)
         )
         chain_of_thought: list[LLMCoT] = []
+        last_tool = None
         iterations = 0
         while iterations <= self.iterations:
             self._trim_conversation()
@@ -173,6 +180,7 @@ class ReActAgent(BaseModel):
                                 chain_of_thought=[
                                     step.model_dump() for step in chain_of_thought
                                 ],
+                                last_tool=last_tool,
                             ),
                         }
                         return
@@ -199,6 +207,7 @@ class ReActAgent(BaseModel):
                                     ),
                                 )
                             )
+                            last_tool = {"name": tool.name, "data": tool_response}
                             yield {"step": "tool", "content": tool.name}
                         else:
                             observation = (
@@ -219,6 +228,7 @@ class ReActAgent(BaseModel):
                     for key in self.output_format.model_json_schema()["properties"]
                 },
                 chain_of_thought=[step.model_dump() for step in chain_of_thought],
+                last_tool=last_tool,
             ),
         }
         return

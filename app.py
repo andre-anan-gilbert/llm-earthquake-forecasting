@@ -10,7 +10,7 @@ import streamlit as st
 from pydantic import BaseModel, Field
 
 from language_models.agents.react import ReActAgent
-from language_models.models.llm import OpenAILanguageModel
+from language_models.models.llm import ChatMessage, ChatMessageRole, OpenAILanguageModel
 from language_models.proxy_client import BTPProxyClient
 from language_models.settings import settings
 from language_models.tools.current_date import current_date_tool
@@ -121,8 +121,7 @@ def get_agent() -> ReActAgent:
 
     system_prompt = (
         "You are an United States Geological Survey expert who can answer questions regarding earthquakes"
-        + " and can run forecasts. Use the current date tool to access the local date"
-        + " and time before using other tools.Take the following question and answer it as accurately as possible."
+        + " and can run forecasts."
     )
 
     class Output(BaseModel):
@@ -139,34 +138,57 @@ def get_agent() -> ReActAgent:
     )
 
 
+def display_widget(messenger, tool: dict[str, Any] | None) -> None:
+    if tool is None:
+        return
+    elif tool["name"] == "Count Earthquakes":
+        messenger.metric(label="Number of Earthquakes", value=tool["data"]["count"])
+
+
 # Initialize chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-agent = get_agent()
-
-
-def render_chain_of_thought_step(cot_step: dict[str, Any]) -> None:
-    if cot_step["step"] == "final_answer":
-        st.markdown(f":green-background[Final Answer] {cot_step['content']['content']}")
-    elif cot_step["step"] == "tool":
-        st.markdown(f":orange-background[Tool] {cot_step['content']['name']}")
-        st.markdown(f":orange-background[Tool Input] {cot_step['content']['args']}")
-        st.markdown(
-            f":orange-background[Tool Response] {cot_step['content']['response']}"
-        )
-    else:
-        st.markdown(f":blue-background[Thought] {cot_step['content']}")
-
 
 # Display chat messages from history on app rerun
+chat_history = []
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
         if message["role"] == "assistant":
-            with st.popover("View Reasoning", use_container_width=True):
-                for progress in message["chain_of_thought"]:
-                    render_chain_of_thought_step(progress)
+            display_widget(st, message["last_tool"])
+            popover = st.popover("View Reasoning", use_container_width=True)
+            for progress in message["chain_of_thought"]:
+                if progress["step"] == "final_answer":
+                    popover.markdown(
+                        f":green-background[Final Answer] {progress['content']['content']}"
+                    )
+                elif progress["step"] == "tool":
+                    popover.markdown(
+                        f":orange-background[Tool] {progress['content']['name']}"
+                    )
+                    popover.markdown(
+                        f":orange-background[Tool Input] {progress['content']['args']}"
+                    )
+                    popover.markdown(
+                        f":orange-background[Tool Response] {progress['content']['response']}"
+                    )
+                else:
+                    popover.markdown(f":blue-background[Thought] {progress['content']}")
+
+    chat_history.append(
+        ChatMessage(
+            role=(
+                ChatMessageRole.USER
+                if message["role"] == "user"
+                else ChatMessageRole.ASSISTANT
+            ),
+            content=message["content"],
+        )
+    )
+
+agent = get_agent()
+agent.chat_messages = [agent.chat_messages[0]] + chat_history
 
 # React to user input
 if prompt := st.chat_input("Message Earthquake Agent"):
@@ -188,10 +210,9 @@ if prompt := st.chat_input("Message Earthquake Agent"):
             status.update(label="Done!", state="complete")
             final_answer = stream["content"].final_answer["content"]
             chain_of_thought = stream["content"].chain_of_thought
+            last_tool = stream["content"].last_tool
+
             assistant.markdown(final_answer)
-            with assistant.popover("View Reasoning", use_container_width=True):
-                for progress in chain_of_thought:
-                    render_chain_of_thought_step(progress)
 
             # Add assistant response to chat history
             st.session_state.messages.append(
@@ -199,5 +220,8 @@ if prompt := st.chat_input("Message Earthquake Agent"):
                     "role": "assistant",
                     "content": final_answer,
                     "chain_of_thought": chain_of_thought,
+                    "last_tool": last_tool,
                 }
             )
+
+    st.rerun()
