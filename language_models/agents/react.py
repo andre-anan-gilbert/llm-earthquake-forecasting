@@ -207,7 +207,7 @@ class ReActAgent(BaseModel):
                                     ),
                                 )
                             )
-                            last_tool = {"name": tool.name, "data": tool_response}
+                            last_tool = {"name": tool.name, "args": response.tool_input}
                             yield {"step": "tool", "content": tool.name}
                         else:
                             observation = (

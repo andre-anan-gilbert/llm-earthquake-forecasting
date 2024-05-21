@@ -20,32 +20,59 @@ st.set_page_config(layout="wide", initial_sidebar_state="expanded")
 
 
 @st.cache_data
-def get_recent_earthquakes() -> pd.DataFrame:
+def get_recent_earthquakes(
+    start_time: datetime = (datetime.now() - timedelta(days=30)).date(),
+    end_time: datetime = datetime.now().date(),
+    limit: int = 20000,
+    min_depth: int = -100,
+    max_depth: int = 1000,
+    min_magnitude: int | None = None,
+    max_magnitude: int | None = None,
+    alert_level: str | None = None,
+) -> pd.DataFrame:
     """Returns recent earthquakes."""
     params = {
         "format": "csv",
+        "starttime": start_time,
+        "endtime": end_time,
+        "limit": limit,
+        "mindepth": min_depth,
+        "maxdepth": max_depth,
         "eventtype": "earthquake",
-        "limit": 30,
-        "starttime": (datetime.now() - timedelta(days=30)).date(),
-        "endtime": (datetime.now().date()),
     }
+    if min_magnitude is not None:
+        params["minmagnitude"] = min_magnitude
+    if max_magnitude is not None:
+        params["maxmagnitude"] = max_magnitude
+    if alert_level is not None:
+        params["alertlevel"] = alert_level
     url = "https://earthquake.usgs.gov/fdsnws/event/1/query?" + parse.urlencode(params)
     return pd.read_csv(url)
 
 
 @st.cache_data
-def count_earthquakes(alert_level: str | None = None) -> int:
-    start_time = (datetime.now() - timedelta(days=30)).date()
-    end_time = datetime.now().date()
+def count_earthquakes(
+    start_time: datetime = (datetime.now() - timedelta(days=30)).date(),
+    end_time: datetime = datetime.now().date(),
+    limit: int = 20000,
+    min_depth: int = -100,
+    max_depth: int = 1000,
+    min_magnitude: int | None = None,
+    max_magnitude: int | None = None,
+    alert_level: str | None = None,
+) -> int:
     params = {
         "format": "geojson",
         "starttime": start_time,
         "endtime": end_time,
-        "limit": 20000,
+        "limit": limit,
+        "mindepth": min_depth,
+        "maxdepth": max_depth,
+        "minmagnitude": min_magnitude,
+        "maxmagnitude": max_magnitude,
+        "alertlevel": alert_level,
         "eventtype": "earthquake",
     }
-    if alert_level is not None:
-        params["alertlevel"] = alert_level
     return requests.get(
         "https://earthquake.usgs.gov/fdsnws/event/1/count",
         params=params,
@@ -94,13 +121,13 @@ with st.sidebar:
 
     st.divider()
     st.header("Recent Earthquakes")
-    df = get_recent_earthquakes()
-    for _, data in df.iterrows():
+    df = get_recent_earthquakes(limit=20)
+    for _, row in df.iterrows():
         with st.container(border=True):
-            st.subheader(data.place)
-            st.text(f"Magnitude: {data.mag}")
-            st.text(f"Depth: {data.depth}")
-            st.text(f"Date: {data.time}")
+            st.subheader(row.place)
+            st.text(f"Magnitude: {row.mag}")
+            st.text(f"Depth: {row.depth}")
+            st.text(f"Date: {row.time}")
 
 
 def get_agent() -> ReActAgent:
@@ -115,7 +142,7 @@ def get_agent() -> ReActAgent:
     llm = OpenAILanguageModel(
         proxy_client=proxy_client,
         model="gpt-4",
-        max_tokens=1024,
+        max_tokens=512,
         temperature=0.0,
     )
 
@@ -142,7 +169,11 @@ def display_widget(messenger, tool: dict[str, Any] | None) -> None:
     if tool is None:
         return
     elif tool["name"] == "Count Earthquakes":
-        messenger.metric(label="Number of Earthquakes", value=tool["data"]["count"])
+        count = count_earthquakes(**tool["args"])["count"]
+        messenger.metric(label="Number of Earthquakes", value=count)
+    elif tool["name"] == "Query Earthquakes":
+        data = get_recent_earthquakes(**tool["args"])
+        messenger.map(data, latitude="latitude", longitude="longitude", size=3000)
 
 
 # Initialize chat history
@@ -212,8 +243,6 @@ if prompt := st.chat_input("Message Earthquake Agent"):
             chain_of_thought = stream["content"].chain_of_thought
             last_tool = stream["content"].last_tool
 
-            assistant.markdown(final_answer)
-
             # Add assistant response to chat history
             st.session_state.messages.append(
                 {
@@ -224,4 +253,4 @@ if prompt := st.chat_input("Message Earthquake Agent"):
                 }
             )
 
-    st.rerun()
+            st.rerun()
