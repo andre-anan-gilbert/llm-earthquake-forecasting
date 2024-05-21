@@ -169,7 +169,7 @@ for message in st.session_state.messages:
                     render_chain_of_thought_step(progress)
 
 # React to user input
-if prompt := st.chat_input("What is up?"):
+if prompt := st.chat_input("Message Earthquake Agent"):
     # Display user message in chat message container
     st.chat_message("user").markdown(prompt)
 
