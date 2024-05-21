@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from enum import Enum
-from typing import Any, Type
+from typing import Any, Generator, Type
 
 import tiktoken
 from pydantic import BaseModel, ValidationError
@@ -132,7 +132,7 @@ class ReActAgent(BaseModel):
             observation = f"Your response failed validation. The error was: {e}"
         return response, observation
 
-    def invoke(self, prompt: dict[str, Any]) -> AgentResponse:
+    def invoke(self, prompt: dict[str, Any]) -> Generator:
         """Runs the AI agent."""
         prompt = self.task_prompt.format(
             **{
@@ -156,6 +156,7 @@ class ReActAgent(BaseModel):
                 chain_of_thought.append(
                     LLMCoT(step=LLMCoTStep.THOUGHT, content=response.thought)
                 )
+                yield {"step": "thought", "content": response.thought}
                 if response.tool == "Final Answer":
                     try:
                         logging.info("Final answer:\n%s", response.tool_input)
@@ -164,13 +165,17 @@ class ReActAgent(BaseModel):
                         chain_of_thought.append(
                             LLMCoT(step=LLMCoTStep.FINAL_ANSWER, content=final_answer)
                         )
-                        return AgentResponse(
-                            prompt=prompt,
-                            final_answer=final_answer,
-                            chain_of_thought=[
-                                step.model_dump() for step in chain_of_thought
-                            ],
-                        )
+                        yield {
+                            "step": "final_answer",
+                            "content": AgentResponse(
+                                prompt=prompt,
+                                final_answer=final_answer,
+                                chain_of_thought=[
+                                    step.model_dump() for step in chain_of_thought
+                                ],
+                            ),
+                        }
+                        return
                     except ValidationError as e:
                         observation = (
                             f"Your final answer failed validation. The error was: {e}"
@@ -194,6 +199,7 @@ class ReActAgent(BaseModel):
                                     ),
                                 )
                             )
+                            yield {"step": "tool", "content": tool.name}
                         else:
                             observation = (
                                 f"{response.tool} tool doesn't exist."
@@ -203,14 +209,19 @@ class ReActAgent(BaseModel):
                 ChatMessage(role=ChatMessageRole.ASSISTANT, content=observation)
             )
             iterations += 1
-        return AgentResponse(
-            prompt=prompt,
-            final_answer={
-                key: None
-                for key in self.output_format.model_json_schema()["properties"]
-            },
-            chain_of_thought=[step.model_dump() for step in chain_of_thought],
-        )
+
+        yield {
+            "step": "final_answer",
+            "content": AgentResponse(
+                prompt=prompt,
+                final_answer={
+                    key: None
+                    for key in self.output_format.model_json_schema()["properties"]
+                },
+                chain_of_thought=[step.model_dump() for step in chain_of_thought],
+            ),
+        }
+        return
 
     @classmethod
     def create(

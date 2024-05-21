@@ -19,12 +19,13 @@ from language_models.tools.earthquake import earthquake_tools
 st.set_page_config(layout="wide", initial_sidebar_state="expanded")
 
 
+@st.cache_data
 def get_recent_earthquakes() -> pd.DataFrame:
-    """Returns 10 recent earthquakes."""
+    """Returns recent earthquakes."""
     params = {
         "format": "csv",
         "eventtype": "earthquake",
-        "limit": 10,
+        "limit": 30,
         "starttime": (datetime.now() - timedelta(days=30)).date(),
         "endtime": (datetime.now().date()),
     }
@@ -143,32 +144,19 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 agent = get_agent()
-chain_of_thought_titles = {
-    "thought": "Thought",
-    "tool": "Tool",
-    "final_answer": "Final Answer",
-}
 
 
 def render_chain_of_thought_step(cot_step: dict[str, Any]) -> None:
     if cot_step["step"] == "final_answer":
-        st.markdown(
-            f"**{chain_of_thought_titles[cot_step['step']]}:** {cot_step['content']['content']}"
-        )
+        st.markdown(f":green-background[Final Answer] {cot_step['content']['content']}")
     elif cot_step["step"] == "tool":
+        st.markdown(f":orange-background[Tool] {cot_step['content']['name']}")
+        st.markdown(f":orange-background[Tool Input] {cot_step['content']['args']}")
         st.markdown(
-            f"**{chain_of_thought_titles[cot_step['step']]}:** {cot_step['content']['name']}"
-        )
-        st.markdown(
-            f"**{chain_of_thought_titles[cot_step['step']]} input:** {cot_step['content']['args']}"
-        )
-        st.markdown(
-            f"**{chain_of_thought_titles[cot_step['step']]} response:** {cot_step['content']['response']}"
+            f":orange-background[Tool Response] {cot_step['content']['response']}"
         )
     else:
-        st.markdown(
-            f"**{chain_of_thought_titles[cot_step['step']]}:** {cot_step['content']}"
-        )
+        st.markdown(f":blue-background[Thought] {cot_step['content']}")
 
 
 # Display chat messages from history on app rerun
@@ -176,7 +164,7 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
         if message["role"] == "assistant":
-            with st.popover("View Reasoning"):
+            with st.popover("View Reasoning", use_container_width=True):
                 for progress in message["chain_of_thought"]:
                     render_chain_of_thought_step(progress)
 
@@ -184,24 +172,32 @@ for message in st.session_state.messages:
 if prompt := st.chat_input("What is up?"):
     # Display user message in chat message container
     st.chat_message("user").markdown(prompt)
+
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    response = agent.invoke({"prompt": prompt})
-    final_answer = response.final_answer["content"]
-    chain_of_thought = response.chain_of_thought
-    # Display assistant response in chat message container
-    with st.chat_message("assistant"):
-        st.markdown(final_answer)
-        with st.popover("View Reasoning"):
-            for progress in chain_of_thought:
-                render_chain_of_thought_step(progress)
+    assistant = st.chat_message("assistant")
+    status = assistant.status(label="Running...")
+    for stream in agent.invoke({"prompt": prompt}):
+        if stream["step"] == "thought":
+            status.update(label=stream["content"])
+        elif stream["step"] == "tool":
+            status.update(label=f"Using Tool: {stream['content']}")
+        else:
+            # Display assistant response in chat message container
+            status.update(label="Done!", state="complete")
+            final_answer = stream["content"].final_answer["content"]
+            chain_of_thought = stream["content"].chain_of_thought
+            assistant.markdown(final_answer)
+            with assistant.popover("View Reasoning", use_container_width=True):
+                for progress in chain_of_thought:
+                    render_chain_of_thought_step(progress)
 
-    # Add assistant response to chat history
-    st.session_state.messages.append(
-        {
-            "role": "assistant",
-            "content": final_answer,
-            "chain_of_thought": chain_of_thought,
-        }
-    )
+            # Add assistant response to chat history
+            st.session_state.messages.append(
+                {
+                    "role": "assistant",
+                    "content": final_answer,
+                    "chain_of_thought": chain_of_thought,
+                }
+            )
