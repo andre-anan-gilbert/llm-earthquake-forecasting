@@ -173,7 +173,13 @@ def display_widget(messenger, tool: dict[str, Any] | None) -> None:
         messenger.metric(label="Number of Earthquakes", value=count)
     elif tool["name"] == "Query Earthquakes":
         data = get_recent_earthquakes(**tool["args"])
-        messenger.map(data, latitude="latitude", longitude="longitude", size=3000)
+        messenger.map(
+            data,
+            latitude="latitude",
+            longitude="longitude",
+            size=3000,
+            color="#90ee90",
+        )
 
 
 # Initialize chat history
@@ -184,6 +190,7 @@ if "messages" not in st.session_state:
 # Display chat messages from history on app rerun
 chat_history = []
 for message in st.session_state.messages:
+    prev_steps = []
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
         if message["role"] == "assistant":
@@ -195,17 +202,26 @@ for message in st.session_state.messages:
                         f":green-background[Final Answer] {progress['content']['content']}"
                     )
                 elif progress["step"] == "tool":
+                    tool_name = progress["content"]["name"]
+                    tool_input = progress["content"]["args"]
+                    tool_response = progress["content"]["response"]
+                    popover.markdown(f":orange-background[Tool] {tool_name}")
+                    popover.markdown(f":orange-background[Tool Input] {tool_input}")
                     popover.markdown(
-                        f":orange-background[Tool] {progress['content']['name']}"
+                        f":orange-background[Tool Response] {tool_response}"
                     )
-                    popover.markdown(
-                        f":orange-background[Tool Input] {progress['content']['args']}"
-                    )
-                    popover.markdown(
-                        f":orange-background[Tool Response] {progress['content']['response']}"
-                    )
+                    prev_steps.append(f"Tool: {tool_name}")
+                    prev_steps.append(f"Tool Input: {tool_input}")
+                    prev_steps.append(f"Tool Response: {tool_response}")
                 else:
-                    popover.markdown(f":blue-background[Thought] {progress['content']}")
+                    thought = progress["content"]
+                    popover.markdown(f":blue-background[Thought] {thought}")
+                    prev_steps.append(f"Thought: {thought}")
+
+    if prev_steps:
+        chat_history[-1].content += "\n\nThis was your previous work:\n\n" + "\n".join(
+            prev_steps
+        )
 
     chat_history.append(
         ChatMessage(
@@ -214,7 +230,7 @@ for message in st.session_state.messages:
                 if message["role"] == "user"
                 else ChatMessageRole.ASSISTANT
             ),
-            content=message["content"],
+            content=(message["content"]),
         )
     )
 
@@ -253,4 +269,4 @@ if prompt := st.chat_input("Message Earthquake Agent"):
                 }
             )
 
-            st.rerun()
+    st.rerun()
