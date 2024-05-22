@@ -30,21 +30,21 @@ _FORMAT_INSTRUCTIONS = """Respond to the user as helpfully and accurately as pos
 
 You have access to the following tools: {tools}
 
-Always use the following JSON format:
+Please ALWAYS use the following JSON format:
 {{
   "thought": "You should always think about what to do consider previous and subsequent steps",
   "tool": "The tool to use. Must be on of {tool_names}",
-  "tool_input": "Valid key value pairs",
+  "tool_input": "Valid keyword arguments",
 }}
 
 Observation: tool result
 ... (this Thought/Tool/Tool Input/Observation can repeat N times)
 
-When you know the answer, use the following JSON format:
+When you know the answer, you MUST use the following JSON format:
 {{
   "thought": "I now know what to respond",
   "tool": "Final Answer",
-  "tool_input": "Valid key value pairs",
+  "tool_input": "Valid keyword arguments",
 }}"""
 
 
@@ -253,7 +253,7 @@ class ReActAgent(BaseModel):
         output_tool = Tool(
             func=lambda _: None,
             name="Final Answer",
-            description="Use this tool to answer the question.",
+            description="Provides the final answer.",
             args_schema=output_format,
         )
         tools = [output_tool] if tools is None else tools + [output_tool]

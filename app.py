@@ -177,7 +177,7 @@ def display_widget(messenger, tool: dict[str, Any] | None) -> None:
             data,
             latitude="latitude",
             longitude="longitude",
-            size=3000,
+            size=1000,
             color="#90ee90",
         )
 
