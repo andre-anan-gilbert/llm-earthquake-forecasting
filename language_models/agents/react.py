@@ -30,7 +30,7 @@ _FORMAT_INSTRUCTIONS = """Respond to the user as helpfully and accurately as pos
 
 You have access to the following tools: {tools}
 
-Please ALWAYS use the following JSON format:
+Always use the following JSON format:
 {{
   "thought": "You should always think about what to do consider previous and subsequent steps",
   "tool": "The tool to use. Must be on of {tool_names}",
@@ -40,7 +40,7 @@ Please ALWAYS use the following JSON format:
 Observation: tool result
 ... (this Thought/Tool/Tool Input/Observation can repeat N times)
 
-When you know the answer, you MUST use the following JSON format:
+When you know the answer, use the following JSON format:
 {{
   "thought": "I now know what to respond",
   "tool": "Final Answer",
