@@ -12,7 +12,7 @@ print("Loaded data.")
 
 print("Preprocessing data.")
 df.time = pd.to_datetime(df.time)
-df = df.loc[df.time >= "1994-01-01"]
+df = df.loc[df.time >= "1974-01-01"]
 df = df.sort_values("time")
 df = df.set_index("time")
 
@@ -36,7 +36,6 @@ df.latitude = df.latitude.ffill()
 df.longitude = df.longitude.ffill()
 
 df["day"] = df.time.dt.day
-df["month"] = df.time.dt.month
 df["dayofweek"] = df.time.dt.dayofweek
 df["dayofyear"] = df.time.dt.dayofyear
 
@@ -101,7 +100,6 @@ print("Preprocessed data.")
 
 features = [
     "day",
-    "month",
     "dayofweek",
     "dayofyear",
     f"mag_rolling_mean_{start_lag}",
@@ -133,7 +131,7 @@ df_train = df.loc[df.time < time]
 df_test = df.loc[df.time >= time]
 
 print("Training model.")
-depth = 4
+depth = 10
 iterations = 1000
 model = cb.CatBoostRegressor(
     early_stopping_rounds=20,
@@ -150,5 +148,5 @@ print(
 )
 print(f"R2 Score: {r2_score(df_test[target], prediction)}")
 
-model_file = os.path.join(os.path.dirname(__file__), "model_6")
+model_file = os.path.join(os.path.dirname(__file__), f"model_depth_{depth}_2")
 model.save_model(model_file)
