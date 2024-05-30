@@ -2,6 +2,7 @@
 
 from typing import Any
 
+import pandas as pd
 import plotly.express as px
 import streamlit as st
 
@@ -53,12 +54,14 @@ with st.sidebar:
     st.divider()
     st.header("Recent Earthquakes")
     df = get_recent_earthquakes(limit=10)
+    df.time = pd.to_datetime(df.time)
+    df.time = df.time.dt.strftime("%Y-%m-%d %H:%M:%S")
     for _, row in df.iterrows():
         with st.container(border=True):
             st.subheader(row.place)
-            st.text(f"Magnitude: {row.mag}")
-            st.text(f"Depth: {row.depth}")
             st.text(f"Date: {row.time}")
+            st.text(f"Magnitude: {row.mag}")
+            st.text(f"Depth: {row.depth} km")
 
 
 def display_widget(messenger, tool: dict[str, Any] | None) -> None:
