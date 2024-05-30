@@ -144,7 +144,7 @@ for message in st.session_state.messages:
                 if message["role"] == "user"
                 else ChatMessageRole.ASSISTANT
             ),
-            content=(message["content"]),
+            content=str(message["content"]),
         )
     )
 

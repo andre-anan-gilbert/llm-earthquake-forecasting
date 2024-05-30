@@ -276,7 +276,6 @@ class USGeopoliticalSurveyEarthquakeAPI(BaseModel):
     )
 
 
-@st.cache_data
 def query_earthquakes(
     start_time: datetime = (datetime.now() - timedelta(days=30)).date(),
     end_time: datetime = datetime.now().date(),
@@ -329,7 +328,8 @@ def get_agent() -> ReActAgent:
 
     system_prompt = (
         "You are an United States Geological Survey expert who can answer questions regarding earthquakes"
-        + " and can run forecasts."
+        + " and can run forecasts. Before you use the Forecast Earthquakes tool, always check which "
+        + "regions are available using Find Regions first."
     )
 
     class Output(BaseModel):
@@ -356,7 +356,7 @@ def get_agent() -> ReActAgent:
         Tool(
             func=get_regions,
             name="Find Regions",
-            description="Use this tool to access the regions that can be used for forecasting.",
+            description="Use this tool to access the available regions that can be used for forecasting.",
         ),
         Tool(
             func=forecast_formatted,
@@ -373,5 +373,5 @@ def get_agent() -> ReActAgent:
         task_prompt_variables=["prompt"],
         tools=tools,
         output_format=Output,
-        iterations=10,
+        iterations=20,
     )
