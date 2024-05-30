@@ -75,6 +75,7 @@ def display_widget(messenger, tool: dict[str, Any] | None) -> None:
             longitude="longitude",
             size=1000,
             color="#90ee90",
+            use_container_width=True,
         )
     elif tool["name"] == "Forecast Earthquakes":
         df_forecast = get_forecast(**tool["args"])
