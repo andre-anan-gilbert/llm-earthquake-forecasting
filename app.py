@@ -2,6 +2,7 @@
 
 from typing import Any
 
+import plotly.express as px
 import streamlit as st
 
 from agent import get_agent, get_forecast
@@ -77,7 +78,18 @@ def display_widget(messenger, tool: dict[str, Any] | None) -> None:
         )
     elif tool["name"] == "Forecast Earthquakes":
         df_forecast = get_forecast(**tool["args"])
-        messenger.line_chart(df_forecast, y=["magnitude", "forecast"])
+        fig = px.line(
+            df_forecast,
+            x="Date",
+            y=["Actual", "Forecast"],
+            markers=True,
+        )
+        fig.update_layout(
+            title=f"Earthquake Forecast for {tool['args']['region']}",
+            yaxis_title="Magnitude",
+            legend_title_text="Magnitude",
+        )
+        messenger.plotly_chart(fig, use_container_width=True)
 
 
 # Initialize chat history

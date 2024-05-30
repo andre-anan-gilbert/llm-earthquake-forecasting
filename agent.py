@@ -197,7 +197,15 @@ def get_forecast(region: str) -> pd.DataFrame:
     cat_features = ["region"]
     target = "mag"
     forecast = model.predict(df[features + cat_features])
-    return pd.DataFrame({"magnitude": df[target], "forecast": forecast}, index=df.index)
+    df = pd.DataFrame(
+        {
+            "Date": df.index,
+            "Actual": df[target],
+            "Forecast": forecast,
+        }
+    )
+    date = pd.Timestamp.now(tz=pytz.UTC).normalize() - pd.Timedelta(days=7)
+    return df.loc[df.Date >= date]
 
 
 class Forecast(BaseModel):
@@ -208,7 +216,7 @@ class Forecast(BaseModel):
 
 def forecast_formatted(region: str) -> dict[str, list]:
     df_forecast = get_forecast(region)
-    df_forecast = df_forecast.rename(columns={"magnitude": "actual magnitude"})
+    df_forecast = df_forecast.rename(columns={"Actual": "Actual Magnitude"})
     return {"forecast": df_forecast.to_dict(orient="records")}
 
 
