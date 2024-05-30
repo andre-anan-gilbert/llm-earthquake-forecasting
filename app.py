@@ -1,84 +1,14 @@
 """Entrypoint."""
 
-from datetime import datetime, timedelta
 from typing import Any
-from urllib import parse
 
-import pandas as pd
-import requests
 import streamlit as st
-from pydantic import BaseModel, Field
 
-from language_models.agents.react import ReActAgent
-from language_models.models.llm import ChatMessage, ChatMessageRole, OpenAILanguageModel
-from language_models.proxy_client import BTPProxyClient
-from language_models.settings import settings
-from language_models.tools.current_date import current_date_tool
-from language_models.tools.earthquake import earthquake_tools
+from agent import get_agent, get_forecast
+from api import count_earthquakes, get_recent_earthquakes
+from language_models.models.llm import ChatMessage, ChatMessageRole
 
 st.set_page_config(layout="wide", initial_sidebar_state="expanded")
-
-
-@st.cache_data
-def get_recent_earthquakes(
-    start_time: datetime = (datetime.now() - timedelta(days=30)).date(),
-    end_time: datetime = datetime.now().date(),
-    limit: int = 20000,
-    min_depth: int = -100,
-    max_depth: int = 1000,
-    min_magnitude: int | None = None,
-    max_magnitude: int | None = None,
-    alert_level: str | None = None,
-) -> pd.DataFrame:
-    """Returns recent earthquakes."""
-    params = {
-        "format": "csv",
-        "starttime": start_time,
-        "endtime": end_time,
-        "limit": limit,
-        "mindepth": min_depth,
-        "maxdepth": max_depth,
-        "eventtype": "earthquake",
-    }
-    if min_magnitude is not None:
-        params["minmagnitude"] = min_magnitude
-    if max_magnitude is not None:
-        params["maxmagnitude"] = max_magnitude
-    if alert_level is not None:
-        params["alertlevel"] = alert_level
-    url = "https://earthquake.usgs.gov/fdsnws/event/1/query?" + parse.urlencode(params)
-    return pd.read_csv(url)
-
-
-@st.cache_data
-def count_earthquakes(
-    start_time: datetime = (datetime.now() - timedelta(days=30)).date(),
-    end_time: datetime = datetime.now().date(),
-    limit: int = 20000,
-    min_depth: int = -100,
-    max_depth: int = 1000,
-    min_magnitude: int | None = None,
-    max_magnitude: int | None = None,
-    alert_level: str | None = None,
-) -> int:
-    params = {
-        "format": "geojson",
-        "starttime": start_time,
-        "endtime": end_time,
-        "limit": limit,
-        "mindepth": min_depth,
-        "maxdepth": max_depth,
-        "minmagnitude": min_magnitude,
-        "maxmagnitude": max_magnitude,
-        "alertlevel": alert_level,
-        "eventtype": "earthquake",
-    }
-    return requests.get(
-        "https://earthquake.usgs.gov/fdsnws/event/1/count",
-        params=params,
-        timeout=None,
-    ).json()
-
 
 # Display metrics and recent earthquakes in sidebar
 with st.sidebar:
@@ -121,48 +51,13 @@ with st.sidebar:
 
     st.divider()
     st.header("Recent Earthquakes")
-    df = get_recent_earthquakes(limit=20)
+    df = get_recent_earthquakes(limit=10)
     for _, row in df.iterrows():
         with st.container(border=True):
             st.subheader(row.place)
             st.text(f"Magnitude: {row.mag}")
             st.text(f"Depth: {row.depth}")
             st.text(f"Date: {row.time}")
-
-
-def get_agent() -> ReActAgent:
-    """Returns an agent using ReAct prompting."""
-    proxy_client = BTPProxyClient(
-        client_id=settings.CLIENT_ID,
-        client_secret=settings.CLIENT_SECRET,
-        auth_url=settings.AUTH_URL,
-        api_base=settings.API_BASE,
-    )
-
-    llm = OpenAILanguageModel(
-        proxy_client=proxy_client,
-        model="gpt-4",
-        max_tokens=512,
-        temperature=0.0,
-    )
-
-    system_prompt = (
-        "You are an United States Geological Survey expert who can answer questions regarding earthquakes"
-        + " and can run forecasts."
-    )
-
-    class Output(BaseModel):
-        content: str = Field(description="The final answer.")
-
-    return ReActAgent.create(
-        llm=llm,
-        system_prompt=system_prompt,
-        task_prompt="{prompt}",
-        task_prompt_variables=["prompt"],
-        tools=[current_date_tool] + earthquake_tools,
-        output_format=Output,
-        iterations=10,
-    )
 
 
 def display_widget(messenger, tool: dict[str, Any] | None) -> None:
@@ -180,6 +75,9 @@ def display_widget(messenger, tool: dict[str, Any] | None) -> None:
             size=1000,
             color="#90ee90",
         )
+    elif tool["name"] == "Forecast Earthquakes":
+        df_forecast = get_forecast(**tool["args"])
+        messenger.line_chart(df_forecast, y=["magnitude", "forecast"])
 
 
 # Initialize chat history
