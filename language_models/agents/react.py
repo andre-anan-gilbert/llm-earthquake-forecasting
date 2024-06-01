@@ -148,16 +148,9 @@ class ReActAgent(BaseModel):
         """Runs the AI agent."""
         previous_work = []
         chain_of_thought: list[LLMCoT] = []
-        prompt = self.task_prompt.format(
-            **{
-                variable: prompt.get(variable)
-                for variable in self.task_prompt_variables
-            }
-        )
+        prompt = self.task_prompt.format(**{variable: prompt.get(variable) for variable in self.task_prompt_variables})
         logging.info("Prompt:\n%s", prompt)
-        self.chat_messages.append(
-            ChatMessage(role=ChatMessageRole.USER, content=prompt)
-        )
+        self.chat_messages.append(ChatMessage(role=ChatMessageRole.USER, content=prompt))
         last_tool = None
         iterations = 0
         while iterations <= self.iterations:
@@ -168,34 +161,26 @@ class ReActAgent(BaseModel):
             if response is not None:
                 logging.info("Thought:\n%s", response.thought)
                 previous_work.append(f"Thought: {response.thought}")
-                chain_of_thought.append(
-                    LLMCoT(step=LLMCoTStep.THOUGHT, content=response.thought)
-                )
+                chain_of_thought.append(LLMCoT(step=LLMCoTStep.THOUGHT, content=response.thought))
                 yield {"step": "thought", "content": response.thought}
                 if response.tool == "Final Answer":
                     try:
                         logging.info("Final answer:\n%s", response.tool_input)
                         result = self.output_format.model_validate(response.tool_input)
                         final_answer = result.model_dump()
-                        chain_of_thought.append(
-                            LLMCoT(step=LLMCoTStep.FINAL_ANSWER, content=final_answer)
-                        )
+                        chain_of_thought.append(LLMCoT(step=LLMCoTStep.FINAL_ANSWER, content=final_answer))
                         yield {
                             "step": "final_answer",
                             "content": AgentResponse(
                                 prompt=prompt,
                                 final_answer=final_answer,
-                                chain_of_thought=[
-                                    step.model_dump() for step in chain_of_thought
-                                ],
+                                chain_of_thought=[step.model_dump() for step in chain_of_thought],
                                 last_tool=last_tool,
                             ),
                         }
                         return
                     except ValidationError as e:
-                        observation = (
-                            f"Your final answer failed validation. The error was: {e}"
-                        )
+                        observation = f"Your final answer failed validation. The error was: {e}"
                 else:
                     if self.tools is not None:
                         logging.info("Tool:\n%s", response.tool)
@@ -220,26 +205,17 @@ class ReActAgent(BaseModel):
                             last_tool = {"name": tool.name, "args": response.tool_input}
                             yield {"step": "tool", "content": tool.name}
                         else:
-                            observation = (
-                                f"{response.tool} tool doesn't exist."
-                                f" Try one of these tools: {', '.join(list(self.tools.keys()))}"
-                            )
+                            tool_names = ", ".join(list(self.tools.keys()))
+                            observation = f"{response.tool} tool doesn't exist. Try one of these tools: {tool_names}"
             previous_work.append(f"Observation: {observation}")
-            self.chat_messages[-1].content = (
-                prompt
-                + "\n\nThis was your previous work:\n\n"
-                + "\n".join(previous_work)
-            )
+            self.chat_messages[-1].content = prompt + "\n\nThis was your previous work:\n\n" + "\n".join(previous_work)
             iterations += 1
 
         yield {
             "step": "final_answer",
             "content": AgentResponse(
                 prompt=prompt,
-                final_answer={
-                    key: None
-                    for key in self.output_format.model_json_schema()["properties"]
-                },
+                final_answer={key: None for key in self.output_format.model_json_schema()["properties"]},
                 chain_of_thought=[step.model_dump() for step in chain_of_thought],
                 last_tool=last_tool,
             ),

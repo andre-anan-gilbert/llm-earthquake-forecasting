@@ -133,19 +133,15 @@ def create_features(df: pd.DataFrame) -> pd.DataFrame:
     df[f"latitude_rolling_std_{_START_LAG}"] = df.groupby("region").latitude.transform(
         lambda x: x.rolling(window=_START_LAG).std()
     )
-    df[f"longitude_rolling_mean_{_START_LAG}"] = df.groupby(
-        "region"
-    ).longitude.transform(lambda x: x.rolling(window=_START_LAG).mean())
-    df[f"longitude_rolling_std_{_START_LAG}"] = df.groupby(
-        "region"
-    ).longitude.transform(lambda x: x.rolling(window=_START_LAG).std())
+    df[f"longitude_rolling_mean_{_START_LAG}"] = df.groupby("region").longitude.transform(
+        lambda x: x.rolling(window=_START_LAG).mean()
+    )
+    df[f"longitude_rolling_std_{_START_LAG}"] = df.groupby("region").longitude.transform(
+        lambda x: x.rolling(window=_START_LAG).std()
+    )
 
-    df[f"mag_rolling_mean_{_END_LAG}"] = df.groupby("region").mag.transform(
-        lambda x: x.rolling(window=_END_LAG).mean()
-    )
-    df[f"mag_rolling_std_{_END_LAG}"] = df.groupby("region").mag.transform(
-        lambda x: x.rolling(window=_END_LAG).std()
-    )
+    df[f"mag_rolling_mean_{_END_LAG}"] = df.groupby("region").mag.transform(lambda x: x.rolling(window=_END_LAG).mean())
+    df[f"mag_rolling_std_{_END_LAG}"] = df.groupby("region").mag.transform(lambda x: x.rolling(window=_END_LAG).std())
     df[f"depth_rolling_mean_{_END_LAG}"] = df.groupby("region").depth.transform(
         lambda x: x.rolling(window=_END_LAG).mean()
     )
@@ -209,9 +205,7 @@ def get_forecast(region: str) -> pd.DataFrame:
 
 
 class Forecast(BaseModel):
-    region: str = Field(
-        description="A valid region that the model can perform forecasts for."
-    )
+    region: str = Field(description="A valid region that the model can perform forecasts for.")
 
 
 def forecast_formatted(region: str) -> dict[str, list]:
