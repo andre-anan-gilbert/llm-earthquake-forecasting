@@ -125,18 +125,19 @@ class ReActAgent(BaseModel):
             observation = None
         except json.decoder.JSONDecodeError:
             response = None
+            tool_names = ", ".join(list(self.tools.keys()))
             observation = (
                 "Your response format was incorrect."
                 + "\n\nPlease ALWAYS use the following JSON format:"
-                + '\n{\n\t"thought": "You should always think about what to do consider previous and subsequent steps",'
-                + f'\n\t"tool": "The tool to use. Must be one of {list(self.tools.keys())}",'
-                + '\n\t"tool_input": "Valid keyword arguments"\n}'
+                + '\n{\n  "thought": "You should always think about what to do consider previous and subsequent steps",'
+                + f'\n  "tool": "The tool to use. Must be one of {tool_names}",'
+                + '\n  "tool_input": "Valid keyword arguments"\n}'
                 + "\n\nObservation: tool result"
                 + "\n... (this Thought/Tool/Tool Input/Observation can repeat N times)"
                 + "\n\nWhen you know the answer, you MUST use the following JSON format:"
-                + '\n{\n\t"thought": "You should always think about what to do consider previous and subsequent steps",'
-                + '\n\t"tool": "Final Answer",'
-                + '\n\t"tool_input": "Valid keyword arguments"\n}'
+                + '\n{\n  "thought": "You should always think about what to do consider previous and subsequent steps",'
+                + '\n  "tool": "Final Answer",'
+                + '\n  "tool_input": "Valid keyword arguments"\n}'
             )
         except ValidationError as e:
             response = None
@@ -161,7 +162,6 @@ class ReActAgent(BaseModel):
         iterations = 0
         while iterations <= self.iterations:
             self._trim_conversation()
-            print(self.chat_messages[-1].content)
             response = self.llm.get_completion(self.chat_messages)
             logging.info("Raw response:\n%s", response)
             response, observation = self._parse_response(response)
@@ -222,7 +222,7 @@ class ReActAgent(BaseModel):
                         else:
                             observation = (
                                 f"{response.tool} tool doesn't exist."
-                                f" Try one of these tools: {list(self.tools.keys())}"
+                                f" Try one of these tools: {', '.join(list(self.tools.keys()))}"
                             )
             previous_work.append(f"Observation: {observation}")
             self.chat_messages[-1].content = (
@@ -267,7 +267,7 @@ class ReActAgent(BaseModel):
         tools = [output_tool] if tools is None else tools + [output_tool]
         format_instructions = _FORMAT_INSTRUCTIONS.format(
             tools=[str(tool) for tool in tools],
-            tool_names=[tool.name for tool in tools],
+            tool_names=", ".join([tool.name for tool in tools]),
         )
         chat_messages = [
             ChatMessage(
