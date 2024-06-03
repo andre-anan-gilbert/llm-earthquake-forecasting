@@ -28,23 +28,24 @@ _MODEL_TOKEN_LIMIT = {
 
 _FORMAT_INSTRUCTIONS = """Respond to the user as helpfully and accurately as possible.
 
-You have access to the following tools: {tools}
+You have access to the following tools:
+{tools}
 
 Please ALWAYS use the following JSON format:
 {{
   "thought": "You should always think about what to do consider previous and subsequent steps",
   "tool": "The tool to use. Must be on of {tool_names}",
-  "tool_input": "Valid keyword arguments",
+  "tool_input": "Valid keyword arguments (e.g. {{"key": value}})",
 }}
 
 Observation: tool result
-... (this Thought/Tool/Tool Input/Observation can repeat N times)
+... (this Thought/Tool/Tool input/Observation can repeat N times)
 
 When you know the answer, you MUST use the following JSON format:
 {{
   "thought": "I now know what to respond",
   "tool": "Final Answer",
-  "tool_input": "Valid keyword arguments",
+  "tool_input": "Valid keyword arguments (e.g. {{"key": value}})",
 }}"""
 
 
@@ -131,13 +132,13 @@ class ReActAgent(BaseModel):
                 + "\n\nPlease ALWAYS use the following JSON format:"
                 + '\n{\n  "thought": "You should always think about what to do consider previous and subsequent steps",'
                 + f'\n  "tool": "The tool to use. Must be one of {tool_names}",'
-                + '\n  "tool_input": "Valid keyword arguments"\n}'
+                + '\n  "tool_input": "Valid keyword arguments (e.g. {"key": value})"\n}'
                 + "\n\nObservation: tool result"
                 + "\n... (this Thought/Tool/Tool Input/Observation can repeat N times)"
                 + "\n\nWhen you know the answer, you MUST use the following JSON format:"
                 + '\n{\n  "thought": "You should always think about what to do consider previous and subsequent steps",'
                 + '\n  "tool": "Final Answer",'
-                + '\n  "tool_input": "Valid keyword arguments"\n}'
+                + '\n  "tool_input": "Valid keyword arguments (e.g. {"key": value})"\n}'
             )
         except ValidationError as e:
             response = None
@@ -191,7 +192,7 @@ class ReActAgent(BaseModel):
                             observation = f"Tool response:\n{tool_response}"
                             logging.info(observation)
                             previous_work.append(f"Tool: {tool.name}")
-                            previous_work.append(f"Tool Input: {response.tool_input}")
+                            previous_work.append(f"Tool input: {response.tool_input}")
                             chain_of_thought.append(
                                 LLMCoT(
                                     step=LLMCoTStep.TOOL,
@@ -242,7 +243,7 @@ class ReActAgent(BaseModel):
         )
         tools = [output_tool] if tools is None else tools + [output_tool]
         format_instructions = _FORMAT_INSTRUCTIONS.format(
-            tools=[str(tool) for tool in tools],
+            tools="\n".join([str(tool) for tool in tools]),
             tool_names=", ".join([tool.name for tool in tools]),
         )
         chat_messages = [
