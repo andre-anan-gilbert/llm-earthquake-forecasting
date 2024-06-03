@@ -134,7 +134,7 @@ class ReActAgent(BaseModel):
                 + f'\n  "tool": "The tool to use. Must be one of {tool_names}",'
                 + '\n  "tool_input": "Valid keyword arguments (e.g. {"key": value})"\n}'
                 + "\n\nObservation: tool result"
-                + "\n... (this Thought/Tool/Tool Input/Observation can repeat N times)"
+                + "\n... (this Thought/Tool/Tool input/Observation can repeat N times)"
                 + "\n\nWhen you know the answer, you MUST use the following JSON format:"
                 + '\n{\n  "thought": "You should always think about what to do consider previous and subsequent steps",'
                 + '\n  "tool": "Final Answer",'
