@@ -118,7 +118,7 @@ class ReActAgent(BaseModel):
             del self.chat_messages[1]
             num_tokens = num_tokens_from_messages(self.chat_messages)
 
-    def _parse_response(self, response: str) -> tuple[LLMResponse | None, str]:
+    def _parse_response(self, response: str) -> tuple:
         """Parses the LLM response."""
         try:
             response = json.loads(response, strict=False)
