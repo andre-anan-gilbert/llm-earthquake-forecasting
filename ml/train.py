@@ -40,7 +40,7 @@ df["dayofweek"] = df.time.dt.dayofweek
 df["dayofyear"] = df.time.dt.dayofyear
 
 start_lag = 3
-end_lag = 12
+end_lag = 10
 for i in range(start_lag, end_lag + 1):
     df[f"mag_lag_{i}"] = df.groupby("region").mag.shift(i)
 
@@ -132,7 +132,7 @@ df_train = df.loc[df.time < time]
 df_test = df.loc[df.time >= time]
 
 print("Training model.")
-depth = 10
+depth = 8
 iterations = 1000
 model = cb.CatBoostRegressor(
     early_stopping_rounds=20,
@@ -148,5 +148,5 @@ print(f"Mean Absolute Error: {mean_absolute_error(df_test[target], prediction)}"
 print(f"Root Mean Squared Error: {np.sqrt(mean_squared_error(df_test[target], prediction))}")
 print(f"R2 Score: {r2_score(df_test[target], prediction)}")
 
-model_file = os.path.join(os.path.dirname(__file__), "multi_output_4_model_3")
+model_file = os.path.join(os.path.dirname(__file__), "multi_output_4_model_5")
 model.save_model(model_file)
