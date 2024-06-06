@@ -12,7 +12,7 @@ print("Loaded data.")
 
 print("Preprocessing data.")
 df.time = pd.to_datetime(df.time)
-df = df.loc[df.time >= "1974-01-01"]
+df = df.loc[df.time >= "1994-01-01"]
 df = df.sort_values("time")
 df = df.set_index("time")
 
@@ -40,35 +40,30 @@ df["dayofweek"] = df.time.dt.dayofweek
 df["dayofyear"] = df.time.dt.dayofyear
 
 start_lag = 3
-end_lag = 12
+end_lag = 10
 for i in range(start_lag, end_lag + 1):
     df[f"mag_lag_{i}"] = df.groupby("region").mag.shift(i)
 
-df[f"mag_rolling_mean_{start_lag}"] = df.groupby("region").mag.transform(
-    lambda x: x.rolling(window=start_lag).mean()
-)
-df[f"mag_rolling_std_{start_lag}"] = df.groupby("region").mag.transform(
-    lambda x: x.rolling(window=start_lag).std()
-)
-df[f"mag_rolling_mean_{end_lag}"] = df.groupby("region").mag.transform(
-    lambda x: x.rolling(window=end_lag).mean()
-)
-df[f"mag_rolling_std_{end_lag}"] = df.groupby("region").mag.transform(
-    lambda x: x.rolling(window=end_lag).std()
-)
+for i in range(start_lag, end_lag + 1):
+    df[f"depth_lag_{i}"] = df.groupby("region").depth.shift(i)
+
+for i in range(start_lag, end_lag + 1):
+    df[f"latitude_lag_{i}"] = df.groupby("region").latitude.shift(i)
+
+for i in range(start_lag, end_lag + 1):
+    df[f"longitude_lag_{i}"] = df.groupby("region").longitude.shift(i)
+
+df[f"mag_rolling_mean_{start_lag}"] = df.groupby("region").mag.transform(lambda x: x.rolling(window=start_lag).mean())
+df[f"mag_rolling_std_{start_lag}"] = df.groupby("region").mag.transform(lambda x: x.rolling(window=start_lag).std())
+df[f"mag_rolling_mean_{end_lag}"] = df.groupby("region").mag.transform(lambda x: x.rolling(window=end_lag).mean())
+df[f"mag_rolling_std_{end_lag}"] = df.groupby("region").mag.transform(lambda x: x.rolling(window=end_lag).std())
 
 df[f"depth_rolling_mean_{start_lag}"] = df.groupby("region").depth.transform(
     lambda x: x.rolling(window=start_lag).mean()
 )
-df[f"depth_rolling_std_{start_lag}"] = df.groupby("region").depth.transform(
-    lambda x: x.rolling(window=start_lag).std()
-)
-df[f"depth_rolling_mean_{end_lag}"] = df.groupby("region").depth.transform(
-    lambda x: x.rolling(window=end_lag).mean()
-)
-df[f"depth_rolling_std_{end_lag}"] = df.groupby("region").depth.transform(
-    lambda x: x.rolling(window=end_lag).std()
-)
+df[f"depth_rolling_std_{start_lag}"] = df.groupby("region").depth.transform(lambda x: x.rolling(window=start_lag).std())
+df[f"depth_rolling_mean_{end_lag}"] = df.groupby("region").depth.transform(lambda x: x.rolling(window=end_lag).mean())
+df[f"depth_rolling_std_{end_lag}"] = df.groupby("region").depth.transform(lambda x: x.rolling(window=end_lag).std())
 
 df[f"latitude_rolling_mean_{start_lag}"] = df.groupby("region").latitude.transform(
     lambda x: x.rolling(window=start_lag).mean()
@@ -98,29 +93,35 @@ df[f"longitude_rolling_std_{end_lag}"] = df.groupby("region").longitude.transfor
 
 print("Preprocessed data.")
 
-features = [
-    "day",
-    "dayofweek",
-    "dayofyear",
-    f"mag_rolling_mean_{start_lag}",
-    f"mag_rolling_std_{start_lag}",
-    f"depth_rolling_mean_{start_lag}",
-    f"depth_rolling_std_{start_lag}",
-    f"latitude_rolling_mean_{start_lag}",
-    f"latitude_rolling_std_{start_lag}",
-    f"longitude_rolling_mean_{start_lag}",
-    f"longitude_rolling_std_{start_lag}",
-    f"mag_rolling_mean_{end_lag}",
-    f"mag_rolling_std_{end_lag}",
-    f"depth_rolling_mean_{end_lag}",
-    f"depth_rolling_std_{end_lag}",
-    f"latitude_rolling_mean_{end_lag}",
-    f"latitude_rolling_std_{end_lag}",
-    f"longitude_rolling_mean_{end_lag}",
-    f"longitude_rolling_std_{end_lag}",
-] + [f"mag_lag_{i}" for i in range(start_lag, end_lag + 1)]
+features = (
+    [
+        "day",
+        "dayofweek",
+        "dayofyear",
+        f"mag_rolling_mean_{start_lag}",
+        f"mag_rolling_std_{start_lag}",
+        f"depth_rolling_mean_{start_lag}",
+        f"depth_rolling_std_{start_lag}",
+        f"latitude_rolling_mean_{start_lag}",
+        f"latitude_rolling_std_{start_lag}",
+        f"longitude_rolling_mean_{start_lag}",
+        f"longitude_rolling_std_{start_lag}",
+        f"mag_rolling_mean_{end_lag}",
+        f"mag_rolling_std_{end_lag}",
+        f"depth_rolling_mean_{end_lag}",
+        f"depth_rolling_std_{end_lag}",
+        f"latitude_rolling_mean_{end_lag}",
+        f"latitude_rolling_std_{end_lag}",
+        f"longitude_rolling_mean_{end_lag}",
+        f"longitude_rolling_std_{end_lag}",
+    ]
+    + [f"mag_lag_{i}" for i in range(start_lag, end_lag + 1)]
+    + [f"depth_lag_{i}" for i in range(start_lag, end_lag + 1)]
+    + [f"latitude_lag_{i}" for i in range(start_lag, end_lag + 1)]
+    + [f"longitude_lag_{i}" for i in range(start_lag, end_lag + 1)]
+)
 cat_features = ["region"]
-target = "mag"
+target = ["mag", "depth", "latitude", "longitude"]
 
 n = len(df)
 test_size = 0.2
@@ -138,15 +139,14 @@ model = cb.CatBoostRegressor(
     cat_features=cat_features,
     depth=depth,
     iterations=iterations,
+    loss_function="MultiRMSE",
 )
 model.fit(df_train[features + cat_features], df_train[target])
 
 prediction = model.predict(df_test[features + cat_features])
 print(f"Mean Absolute Error: {mean_absolute_error(df_test[target], prediction)}")
-print(
-    f"Root Mean Squared Error: {np.sqrt(mean_squared_error(df_test[target], prediction))}"
-)
+print(f"Root Mean Squared Error: {np.sqrt(mean_squared_error(df_test[target], prediction))}")
 print(f"R2 Score: {r2_score(df_test[target], prediction)}")
 
-model_file = os.path.join(os.path.dirname(__file__), f"model_depth_{depth}_2")
+model_file = os.path.join(os.path.dirname(__file__), "multi_output_4_model_2")
 model.save_model(model_file)
