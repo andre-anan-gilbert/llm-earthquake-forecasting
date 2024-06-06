@@ -40,7 +40,7 @@ df["dayofweek"] = df.time.dt.dayofweek
 df["dayofyear"] = df.time.dt.dayofyear
 
 start_lag = 3
-end_lag = 10
+end_lag = 12
 for i in range(start_lag, end_lag + 1):
     df[f"mag_lag_{i}"] = df.groupby("region").mag.shift(i)
 
@@ -148,5 +148,5 @@ print(f"Mean Absolute Error: {mean_absolute_error(df_test[target], prediction)}"
 print(f"Root Mean Squared Error: {np.sqrt(mean_squared_error(df_test[target], prediction))}")
 print(f"R2 Score: {r2_score(df_test[target], prediction)}")
 
-model_file = os.path.join(os.path.dirname(__file__), "multi_output_4_model_2")
+model_file = os.path.join(os.path.dirname(__file__), "multi_output_4_model_3")
 model.save_model(model_file)
