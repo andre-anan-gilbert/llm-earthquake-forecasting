@@ -263,5 +263,6 @@ def get_forecast(region: str | None = None) -> pd.DataFrame:
 def forecast_earthquakes() -> pd.DataFrame:
     df = get_forecast()
     today = pd.Timestamp.now().normalize()
-    df = df.loc[df.Date >= today]
+    df = df.loc[df.Date > today]
+    df = df[["Date", "Region", "Latitude", "Longitude", "Magnitude Forecast", "Depth Forecast"]]
     return df

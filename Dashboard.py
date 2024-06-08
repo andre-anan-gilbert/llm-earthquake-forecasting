@@ -48,6 +48,7 @@ with col2.container(border=True):
         delta="Last 30 days",
         delta_color="off",
     )
+
 with col3.container(border=True):
     response = count_earthquakes(alert_level="yellow")
     num_local_earthquakes_past_month = response["count"]
