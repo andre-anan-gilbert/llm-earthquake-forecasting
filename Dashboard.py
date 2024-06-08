@@ -2,9 +2,10 @@
 
 import logging
 
+import pandas as pd
 import streamlit as st
 
-from api import count_earthquakes, forecast_earthquakes
+from api import count_earthquakes, forecast_earthquakes, get_recent_earthquakes
 
 logging.basicConfig(
     filename="app.log",
@@ -15,6 +16,17 @@ logging.basicConfig(
 )
 
 st.set_page_config(layout="wide", initial_sidebar_state="expanded")
+
+with st.sidebar:
+    df = get_recent_earthquakes(limit=10)
+    df.time = pd.to_datetime(df.time)
+    df.time = df.time.dt.strftime("%Y-%m-%d %H:%M:%S")
+    for _, row in df.iterrows():
+        with st.container(border=True):
+            st.subheader(row.place)
+            st.text(f"Date: {row.time}")
+            st.text(f"Magnitude: {row.mag}")
+            st.text(f"Depth: {row.depth} km")
 
 col1, col2, col3, col4 = st.columns(4)
 with col1.container(border=True):
