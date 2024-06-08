@@ -20,7 +20,7 @@ df["region"] = df.place.str.split(", ", expand=True)[1]
 df.region = df.region.fillna(df.place)
 df.region = df.region.replace({"CA": "California", "B.C.": "Baja California"})
 
-df = df[["depth", "mag", "region"]]
+df = df[["depth", "mag", "region", "latitude", "longitude"]]
 
 regions = df.region.value_counts()
 top_k = 25
@@ -30,6 +30,8 @@ df = df.loc[df.region.isin(top_k_regions)]
 df = df.groupby("region").resample("d").mean().reset_index()
 df.mag = df.groupby("region").mag.ffill()
 df.depth = df.groupby("region").depth.ffill()
+df.latitude = df.groupby("region").latitude.ffill()
+df.longitude = df.groupby("region").longitude.ffill()
 
 df["day"] = df.time.dt.day
 df["dayofweek"] = df.time.dt.dayofweek
@@ -43,19 +45,37 @@ for i in range(start_lag, end_lag + 1):
 for i in range(start_lag, end_lag + 1):
     df[f"depth_lag_{i}"] = df.groupby("region").depth.shift(i)
 
+for i in range(start_lag, end_lag + 1):
+    df[f"latitude_lag_{i}"] = df.groupby("region").latitude.shift(i)
+
+for i in range(start_lag, end_lag + 1):
+    df[f"longitude_lag_{i}"] = df.groupby("region").longitude.shift(i)
 
 df[f"mag_rolling_mean_{start_lag}"] = df.groupby("region").mag.transform(lambda x: x.rolling(window=start_lag).mean())
-# df[f"mag_rolling_std_{start_lag}"] = df.groupby("region").mag.transform(lambda x: x.rolling(window=start_lag).std())
+df[f"mag_rolling_std_{start_lag}"] = df.groupby("region").mag.transform(lambda x: x.rolling(window=start_lag).std())
 # df[f"mag_rolling_mean_{end_lag}"] = df.groupby("region").mag.transform(lambda x: x.rolling(window=end_lag).mean())
 # df[f"mag_rolling_std_{end_lag}"] = df.groupby("region").mag.transform(lambda x: x.rolling(window=end_lag).std())
 
 df[f"depth_rolling_mean_{start_lag}"] = df.groupby("region").depth.transform(
     lambda x: x.rolling(window=start_lag).mean()
 )
-# df[f"depth_rolling_std_{start_lag}"] = df.groupby("region").depth.transform(lambda x: x.rolling(window=start_lag).std())
+df[f"depth_rolling_std_{start_lag}"] = df.groupby("region").depth.transform(lambda x: x.rolling(window=start_lag).std())
 # df[f"depth_rolling_mean_{end_lag}"] = df.groupby("region").depth.transform(lambda x: x.rolling(window=end_lag).mean())
 # df[f"depth_rolling_std_{end_lag}"] = df.groupby("region").depth.transform(lambda x: x.rolling(window=end_lag).std())
 
+df[f"latitude_rolling_mean_{start_lag}"] = df.groupby("region").latitude.transform(
+    lambda x: x.rolling(window=start_lag).mean()
+)
+df[f"latitude_rolling_std_{start_lag}"] = df.groupby("region").latitude.transform(
+    lambda x: x.rolling(window=start_lag).std()
+)
+
+df[f"longitude_rolling_mean_{start_lag}"] = df.groupby("region").longitude.transform(
+    lambda x: x.rolling(window=start_lag).mean()
+)
+df[f"longitude_rolling_std_{start_lag}"] = df.groupby("region").longitude.transform(
+    lambda x: x.rolling(window=start_lag).std()
+)
 
 print("Preprocessed data.")
 
@@ -65,9 +85,13 @@ features = (
         "dayofweek",
         "dayofyear",
         f"mag_rolling_mean_{start_lag}",
-        # f"mag_rolling_std_{start_lag}",
+        f"mag_rolling_std_{start_lag}",
         f"depth_rolling_mean_{start_lag}",
-        # f"depth_rolling_std_{start_lag}",
+        f"depth_rolling_std_{start_lag}",
+        f"latitude_rolling_mean_{start_lag}",
+        f"latitude_rolling_std_{start_lag}",
+        f"longitude_rolling_mean_{start_lag}",
+        f"longitude_rolling_std_{start_lag}",
         # f"mag_rolling_mean_{end_lag}",
         # f"mag_rolling_std_{end_lag}",
         # f"depth_rolling_mean_{end_lag}",
@@ -75,9 +99,11 @@ features = (
     ]
     + [f"mag_lag_{i}" for i in range(start_lag, end_lag + 1)]
     + [f"depth_lag_{i}" for i in range(start_lag, end_lag + 1)]
+    + [f"latitude_lag_{i}" for i in range(start_lag, end_lag + 1)]
+    + [f"longitude_lag_{i}" for i in range(start_lag, end_lag + 1)]
 )
 cat_features = ["region"]
-target = ["mag", "depth"]
+target = ["mag", "depth", "latitude", "longitude"]
 
 n = len(df)
 test_size = 0.2
@@ -104,5 +130,5 @@ print(f"Mean Absolute Error: {mean_absolute_error(df_test[target], prediction)}"
 print(f"Root Mean Squared Error: {np.sqrt(mean_squared_error(df_test[target], prediction))}")
 print(f"R2 Score: {r2_score(df_test[target], prediction)}")
 
-model_file = os.path.join(os.path.dirname(__file__), "multi_output_model_2")
+model_file = os.path.join(os.path.dirname(__file__), "multi_output_4_model")
 model.save_model(model_file)
