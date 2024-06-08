@@ -2,7 +2,6 @@
 
 from typing import Any
 
-import pandas as pd
 import plotly.express as px
 import streamlit as st
 
@@ -14,9 +13,7 @@ st.set_page_config(layout="wide", initial_sidebar_state="expanded")
 
 # Display metrics and recent earthquakes in sidebar
 with st.sidebar:
-    st.title("Earthquake Forecasting")
-    col1, col2 = st.columns(2)
-    with col1:
+    with st.container(border=True):
         response = count_earthquakes()
         num_earthquakes_past_month = response["count"]
         st.metric(
@@ -25,15 +22,8 @@ with st.sidebar:
             delta="Last 30 days",
             delta_color="off",
         )
-        response = count_earthquakes(alert_level="orange")
-        num_national_earthquakes_past_month = response["count"]
-        st.metric(
-            label="National Earthquakes",
-            value=num_national_earthquakes_past_month,
-            delta="Last 30 days",
-            delta_color="off",
-        )
-    with col2:
+
+    with st.container(border=True):
         response = count_earthquakes(alert_level="yellow")
         num_local_earthquakes_past_month = response["count"]
         st.metric(
@@ -42,6 +32,18 @@ with st.sidebar:
             delta="Last 30 days",
             delta_color="off",
         )
+
+    with st.container(border=True):
+        response = count_earthquakes(alert_level="orange")
+        num_national_earthquakes_past_month = response["count"]
+        st.metric(
+            label="National Earthquakes",
+            value=num_national_earthquakes_past_month,
+            delta="Last 30 days",
+            delta_color="off",
+        )
+
+    with st.container(border=True):
         response = count_earthquakes(alert_level="red")
         num_international_earthquakes_past_month = response["count"]
         st.metric(
@@ -50,18 +52,6 @@ with st.sidebar:
             delta="Last 30 days",
             delta_color="off",
         )
-
-    st.divider()
-    st.header("Recent Earthquakes")
-    df = get_recent_earthquakes(limit=10)
-    df.time = pd.to_datetime(df.time)
-    df.time = df.time.dt.strftime("%Y-%m-%d %H:%M:%S")
-    for _, row in df.iterrows():
-        with st.container(border=True):
-            st.subheader(row.place)
-            st.text(f"Date: {row.time}")
-            st.text(f"Magnitude: {row.mag}")
-            st.text(f"Depth: {row.depth} km")
 
 
 def display_widget(messenger, tool: dict[str, Any] | None) -> None:
@@ -72,28 +62,47 @@ def display_widget(messenger, tool: dict[str, Any] | None) -> None:
         messenger.metric(label="Number of Earthquakes", value=count)
     elif tool["name"] == "Query Earthquakes":
         data = get_recent_earthquakes(**tool["args"])
-        messenger.map(
-            data,
-            latitude="latitude",
-            longitude="longitude",
-            size=1000,
-            color="#90ee90",
-            use_container_width=True,
-        )
+        tab1, tab2 = messenger.tabs(["Map", "Data"])
+        with tab1:
+            messenger.map(
+                data,
+                latitude="latitude",
+                longitude="longitude",
+                size=300,
+                color="#90ee90",
+                use_container_width=True,
+            )
+        with tab2:
+            messenger.dataframe(data)
     elif tool["name"] == "Forecast Earthquakes":
         df_forecast = get_forecast(**tool["args"])
-        fig = px.line(
-            df_forecast,
-            x="Date",
-            y=["Actual", "Forecast"],
-            markers=True,
-        )
-        fig.update_layout(
-            title=f"Earthquake Forecast for {tool['args']['region']}",
-            yaxis_title="Magnitude",
-            legend_title_text="Magnitude",
-        )
-        messenger.plotly_chart(fig, use_container_width=True)
+        tab1, tab2 = messenger.tabs(["Magnitude", "Depth"])
+        with tab1:
+            fig = px.line(
+                df_forecast,
+                x="Date",
+                y=["Magnitude", "Magnitude Forecast"],
+                markers=True,
+            )
+            fig.update_layout(
+                title=f"Magnitude Forecast for {tool['args']['region']}",
+                yaxis_title="Magnitude",
+                legend_title_text="Forecast",
+            )
+            messenger.plotly_chart(fig, use_container_width=True)
+        with tab2:
+            fig = px.line(
+                df_forecast,
+                x="Date",
+                y=["Depth", "Depth Forecast"],
+                markers=True,
+            )
+            fig.update_layout(
+                title=f"Depth Forecast for {tool['args']['region']}",
+                yaxis_title="Depth",
+                legend_title_text="Forecast",
+            )
+            messenger.plotly_chart(fig, use_container_width=True)
 
 
 # Initialize chat history
@@ -142,7 +151,7 @@ agent = get_agent()
 agent.chat_messages = [agent.chat_messages[0]] + chat_history
 
 # React to user input
-if prompt := st.chat_input("Message Earthquake Agent"):
+if prompt := st.chat_input("Ask Earthquake Copilot"):
     # Display user message in chat message container
     st.chat_message("user").markdown(prompt)
 

@@ -1,9 +1,18 @@
 """App entrypoint."""
 
-import plotly.express as px
+import logging
+
 import streamlit as st
 
-from api import count_earthquakes, get_recent_earthquakes
+from api import count_earthquakes, forecast_earthquakes
+
+logging.basicConfig(
+    filename="app.log",
+    filemode="w",
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+    datefmt="%d/%m/%y %H:%M:%S",
+)
 
 st.set_page_config(layout="wide", initial_sidebar_state="expanded")
 
@@ -47,6 +56,13 @@ with col4.container(border=True):
         delta_color="off",
     )
 
-st.header("Recent Earthquakes")
-df = get_recent_earthquakes()
-st.dataframe(df)
+df = forecast_earthquakes()
+st.map(
+    df,
+    latitude="Latitude",
+    longitude="Longitude",
+    size=300,
+    color="#90ee90",
+    use_container_width=True,
+)
+st.dataframe(df, use_container_width=True)
