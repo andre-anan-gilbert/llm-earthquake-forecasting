@@ -21,8 +21,9 @@ class Forecast(BaseModel):
 
 def forecast_earthquakes(region: str) -> dict[str, list]:
     df = get_forecast(region)
-    today = pd.Timestamp.now().normalize()
+    today = pd.Timestamp.now()
     df = df.loc[df.Date > today]
+    df = df[["Date", "Magnitude Forecast", "Depth Forecast"]]
     return {"forecast": df.to_dict(orient="records")}
 
 

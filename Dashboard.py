@@ -40,21 +40,21 @@ with col1.container(border=True):
     )
 
 with col2.container(border=True):
-    response = count_earthquakes(alert_level="orange")
-    num_national_earthquakes_past_month = response["count"]
-    st.metric(
-        label="National Earthquakes",
-        value=num_national_earthquakes_past_month,
-        delta="Last 30 days",
-        delta_color="off",
-    )
-
-with col3.container(border=True):
     response = count_earthquakes(alert_level="yellow")
     num_local_earthquakes_past_month = response["count"]
     st.metric(
         label="Local/Regional Earthquakes",
         value=num_local_earthquakes_past_month,
+        delta="Last 30 days",
+        delta_color="off",
+    )
+
+with col3.container(border=True):
+    response = count_earthquakes(alert_level="orange")
+    num_national_earthquakes_past_month = response["count"]
+    st.metric(
+        label="National Earthquakes",
+        value=num_national_earthquakes_past_month,
         delta="Last 30 days",
         delta_color="off",
     )
@@ -78,4 +78,4 @@ st.map(
     color="#90ee90",
     use_container_width=True,
 )
-st.dataframe(df, use_container_width=True)
+st.dataframe(df, hide_index=True, use_container_width=True)

@@ -1,8 +1,10 @@
 """Entrypoint."""
 
+from statistics import NormalDist
 from typing import Any
 
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 from agent import get_agent, get_forecast
@@ -54,6 +56,13 @@ with st.sidebar:
         )
 
 
+def confidence_interval(data, confidence):
+    dist = NormalDist.from_samples(data)
+    z = NormalDist().inv_cdf((1 + confidence) / 2.0)
+    h = dist.stdev * z / ((len(data) - 1) ** 0.5)
+    return h
+
+
 def display_widget(messenger, tool: dict[str, Any] | None) -> None:
     if tool is None:
         return
@@ -89,6 +98,44 @@ def display_widget(messenger, tool: dict[str, Any] | None) -> None:
                 yaxis_title="Magnitude",
                 legend_title_text="Forecast",
             )
+            ci_90 = confidence_interval(df_forecast["Magnitude Forecast"], 0.90)
+            ci_50 = confidence_interval(df_forecast["Magnitude Forecast"], 0.50)
+            fig.add_traces(
+                [
+                    go.Scatter(
+                        x=df_forecast["Date"],
+                        y=df_forecast["Magnitude Forecast"] + ci_90,
+                        mode="lines",
+                        line_color="rgba(0,0,0,0)",
+                        showlegend=False,
+                    ),
+                    go.Scatter(
+                        x=df_forecast["Date"],
+                        y=df_forecast["Magnitude Forecast"] - ci_90,
+                        mode="lines",
+                        line_color="rgba(0,0,0,0)",
+                        name="90% Confidence interval",
+                        fill="tonexty",
+                        fillcolor="rgba(231,107,243,0.2)",
+                    ),
+                    go.Scatter(
+                        x=df_forecast["Date"],
+                        y=df_forecast["Magnitude Forecast"] + ci_50,
+                        mode="lines",
+                        line_color="rgba(0,0,0,0)",
+                        showlegend=False,
+                    ),
+                    go.Scatter(
+                        x=df_forecast["Date"],
+                        y=df_forecast["Magnitude Forecast"] - ci_50,
+                        mode="lines",
+                        line_color="rgba(0,0,0,0)",
+                        name="50% Confidence interval",
+                        fill="tonexty",
+                        fillcolor="rgba(0,176,246,0.2)",
+                    ),
+                ]
+            )
             messenger.plotly_chart(fig, use_container_width=True)
         with tab2:
             fig = px.line(
@@ -101,6 +148,44 @@ def display_widget(messenger, tool: dict[str, Any] | None) -> None:
                 title=f"Depth Forecast for {tool['args']['region']}",
                 yaxis_title="Depth",
                 legend_title_text="Forecast",
+            )
+            ci_90 = confidence_interval(df_forecast["Depth Forecast"], 0.90)
+            ci_50 = confidence_interval(df_forecast["Depth Forecast"], 0.50)
+            fig.add_traces(
+                [
+                    go.Scatter(
+                        x=df_forecast["Date"],
+                        y=df_forecast["Depth Forecast"] + ci_90,
+                        mode="lines",
+                        line_color="rgba(0,0,0,0)",
+                        showlegend=False,
+                    ),
+                    go.Scatter(
+                        x=df_forecast["Date"],
+                        y=df_forecast["Depth Forecast"] - ci_90,
+                        mode="lines",
+                        line_color="rgba(0,0,0,0)",
+                        name="90% Confidence interval",
+                        fill="tonexty",
+                        fillcolor="rgba(231,107,243,0.2)",
+                    ),
+                    go.Scatter(
+                        x=df_forecast["Date"],
+                        y=df_forecast["Depth Forecast"] + ci_50,
+                        mode="lines",
+                        line_color="rgba(0,0,0,0)",
+                        showlegend=False,
+                    ),
+                    go.Scatter(
+                        x=df_forecast["Date"],
+                        y=df_forecast["Depth Forecast"] - ci_50,
+                        mode="lines",
+                        line_color="rgba(0,0,0,0)",
+                        name="50% Confidence interval",
+                        fill="tonexty",
+                        fillcolor="rgba(0,176,246,0.2)",
+                    ),
+                ]
             )
             messenger.plotly_chart(fig, use_container_width=True)
 
