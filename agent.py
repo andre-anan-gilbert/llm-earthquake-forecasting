@@ -130,7 +130,7 @@ def get_agent() -> ReActAgent:
         proxy_client=proxy_client,
         model="gpt-4",
         max_tokens=1000,
-        temperature=0.0,
+        temperature=0.2,
     )
 
     system_prompt = (
