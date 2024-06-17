@@ -123,12 +123,11 @@ class ReActAgent(BaseModel):
             tool_names = ", ".join(list(self.tools.keys()))
             observation = (
                 "Your response format was incorrect."
+                + " Look at the JSON format below and correct your answer."
                 + "\n\nPlease ALWAYS use the following JSON format:"
                 + '\n{\n  "thought": "Explain your thought. Consider previous and subsequent steps",'
                 + f'\n  "tool": "The tool to use. Must be one of {tool_names}",'
                 + '\n  "tool_input": "Valid keyword arguments (e.g. {"key": value})"\n}'
-                + "\n\nObservation: tool result"
-                + "\n... (this Thought/Tool/Tool input/Observation can repeat N times)"
                 + "\n\nWhen you know the answer, you MUST use the following JSON format:"
                 + '\n{\n  "thought": "Explain the reason of your final answer when you know what to respond",'
                 + '\n  "tool": "Final Answer",'
@@ -184,7 +183,6 @@ class ReActAgent(BaseModel):
                         if tool is not None:
                             tool_response = tool.invoke(response.tool_input)
                             observation = f"Tool response:\n{tool_response}"
-                            logging.info(observation)
                             previous_work.append(f"Tool: {tool.name}")
                             previous_work.append(f"Tool input: {response.tool_input}")
                             chain_of_thought.append(
@@ -202,6 +200,7 @@ class ReActAgent(BaseModel):
                         else:
                             tool_names = ", ".join(list(self.tools.keys()))
                             observation = f"{response.tool} tool doesn't exist. Try one of these tools: {tool_names}"
+            logging.info("Observation: %s", observation)
             previous_work.append(f"Observation: {observation}")
             self.chat_messages[-1].content = prompt + "\n\nThis was your previous work:\n\n" + "\n".join(previous_work)
             iterations += 1
