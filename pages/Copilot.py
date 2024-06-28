@@ -1,6 +1,5 @@
 """Entrypoint."""
 
-from statistics import NormalDist
 from typing import Any
 
 import plotly.express as px
@@ -56,13 +55,6 @@ with st.sidebar:
         )
 
 
-def confidence_interval(data, confidence):
-    dist = NormalDist.from_samples(data)
-    z = NormalDist().inv_cdf((1 + confidence) / 2.0)
-    h = dist.stdev * z / ((len(data) - 1) ** 0.5)
-    return h
-
-
 def display_widget(messenger, tool: dict[str, Any] | None) -> None:
     if tool is None:
         return
@@ -98,20 +90,18 @@ def display_widget(messenger, tool: dict[str, Any] | None) -> None:
                 yaxis_title="Magnitude",
                 legend_title_text="Forecast",
             )
-            ci_90 = confidence_interval(df_forecast["Magnitude Forecast"], 0.90)
-            ci_50 = confidence_interval(df_forecast["Magnitude Forecast"], 0.50)
             fig.add_traces(
                 [
                     go.Scatter(
                         x=df_forecast["Date"],
-                        y=df_forecast["Magnitude Forecast"] + ci_90,
+                        y=df_forecast["Upper 90 Magnitude Forecast"],
                         mode="lines",
                         line_color="rgba(0,0,0,0)",
                         showlegend=False,
                     ),
                     go.Scatter(
                         x=df_forecast["Date"],
-                        y=df_forecast["Magnitude Forecast"] - ci_90,
+                        y=df_forecast["Lower 90 Magnitude Forecast"],
                         mode="lines",
                         line_color="rgba(0,0,0,0)",
                         name="90% Confidence interval",
@@ -120,14 +110,14 @@ def display_widget(messenger, tool: dict[str, Any] | None) -> None:
                     ),
                     go.Scatter(
                         x=df_forecast["Date"],
-                        y=df_forecast["Magnitude Forecast"] + ci_50,
+                        y=df_forecast["Upper 50 Magnitude Forecast"],
                         mode="lines",
                         line_color="rgba(0,0,0,0)",
                         showlegend=False,
                     ),
                     go.Scatter(
                         x=df_forecast["Date"],
-                        y=df_forecast["Magnitude Forecast"] - ci_50,
+                        y=df_forecast["Lower 50 Magnitude Forecast"],
                         mode="lines",
                         line_color="rgba(0,0,0,0)",
                         name="50% Confidence interval",
@@ -149,20 +139,18 @@ def display_widget(messenger, tool: dict[str, Any] | None) -> None:
                 yaxis_title="Depth",
                 legend_title_text="Forecast",
             )
-            ci_90 = confidence_interval(df_forecast["Depth Forecast"], 0.90)
-            ci_50 = confidence_interval(df_forecast["Depth Forecast"], 0.50)
             fig.add_traces(
                 [
                     go.Scatter(
                         x=df_forecast["Date"],
-                        y=df_forecast["Depth Forecast"] + ci_90,
+                        y=df_forecast["Upper 90 Depth Forecast"],
                         mode="lines",
                         line_color="rgba(0,0,0,0)",
                         showlegend=False,
                     ),
                     go.Scatter(
                         x=df_forecast["Date"],
-                        y=df_forecast["Depth Forecast"] - ci_90,
+                        y=df_forecast["Lower 90 Depth Forecast"],
                         mode="lines",
                         line_color="rgba(0,0,0,0)",
                         name="90% Confidence interval",
@@ -171,14 +159,14 @@ def display_widget(messenger, tool: dict[str, Any] | None) -> None:
                     ),
                     go.Scatter(
                         x=df_forecast["Date"],
-                        y=df_forecast["Depth Forecast"] + ci_50,
+                        y=df_forecast["Upper 50 Depth Forecast"],
                         mode="lines",
                         line_color="rgba(0,0,0,0)",
                         showlegend=False,
                     ),
                     go.Scatter(
                         x=df_forecast["Date"],
-                        y=df_forecast["Depth Forecast"] - ci_50,
+                        y=df_forecast["Lower 50 Depth Forecast"],
                         mode="lines",
                         line_color="rgba(0,0,0,0)",
                         name="50% Confidence interval",

@@ -5,9 +5,11 @@ from datetime import datetime, timedelta
 from urllib import parse
 
 import catboost as cb
+import numpy as np
 import pandas as pd
 import requests
 import streamlit as st
+from scipy.stats import norm
 
 
 @st.cache_data
@@ -273,6 +275,54 @@ def create_features(df: pd.DataFrame, region: str | None) -> pd.DataFrame:
     return df
 
 
+def add_confidence_intervals(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    today = pd.Timestamp.now()
+    df_past = df.loc[df.Date <= today]
+    df_past["horizon"] = np.nan
+    df_future = df.loc[df.Date > today]
+
+    df_future["horizon"] = df_future.index + 1
+    magnitude_error = df_past["Magnitude"] - df_past["Magnitude Forecast"]
+    depth_error = df_past["Depth"] - df_past["Depth Forecast"]
+    magnitude_std = np.std(magnitude_error, ddof=1)
+    depth_std = np.std(depth_error, ddof=1)
+
+    z_90 = norm.ppf(0.95)
+    z_50 = norm.ppf(0.75)
+
+    df_past["magnitude_std"] = magnitude_std
+    df_past["depth_std"] = depth_std
+
+    df_past["Lower 90 Magnitude Forecast"] = df_past["Magnitude Forecast"] - z_90 * df_past["magnitude_std"]
+    df_past["Upper 90 Magnitude Forecast"] = df_past["Magnitude Forecast"] + z_90 * df_past["magnitude_std"]
+
+    df_past["Lower 90 Depth Forecast"] = df_past["Depth Forecast"] - z_90 * df_past["depth_std"]
+    df_past["Upper 90 Depth Forecast"] = df_past["Depth Forecast"] + z_90 * df_past["depth_std"]
+
+    df_past["Lower 50 Magnitude Forecast"] = df_past["Magnitude Forecast"] - z_50 * df_past["magnitude_std"]
+    df_past["Upper 50 Magnitude Forecast"] = df_past["Magnitude Forecast"] + z_50 * df_past["magnitude_std"]
+
+    df_past["Lower 50 Depth Forecast"] = df_past["Depth Forecast"] - z_50 * df_past["depth_std"]
+    df_past["Upper 50 Depth Forecast"] = df_past["Depth Forecast"] + z_50 * df_past["depth_std"]
+
+    df_future["magnitude_std"] = magnitude_std * np.sqrt(df_future["horizon"])
+    df_future["depth_std"] = depth_std * np.sqrt(df_future["horizon"])
+
+    df_future["Lower 90 Magnitude Forecast"] = df_future["Magnitude Forecast"] - z_90 * df_future["magnitude_std"]
+    df_future["Upper 90 Magnitude Forecast"] = df_future["Magnitude Forecast"] + z_90 * df_future["magnitude_std"]
+
+    df_future["Lower 90 Depth Forecast"] = df_future["Depth Forecast"] - z_90 * df_future["depth_std"]
+    df_future["Upper 90 Depth Forecast"] = df_future["Depth Forecast"] + z_90 * df_future["depth_std"]
+
+    df_future["Lower 50 Magnitude Forecast"] = df_future["Magnitude Forecast"] - z_50 * df_future["magnitude_std"]
+    df_future["Upper 50 Magnitude Forecast"] = df_future["Magnitude Forecast"] + z_50 * df_future["magnitude_std"]
+
+    df_future["Lower 50 Depth Forecast"] = df_future["Depth Forecast"] - z_50 * df_future["depth_std"]
+    df_future["Upper 50 Depth Forecast"] = df_future["Depth Forecast"] + z_50 * df_future["depth_std"]
+    return pd.concat([df_past, df_future], axis=0)
+
+
 def get_forecast(region: str | None = None) -> pd.DataFrame:
     model = load_model()
     df = get_recent_earthquakes()
@@ -311,6 +361,27 @@ def get_forecast(region: str | None = None) -> pd.DataFrame:
             "region": "Region",
         }
     )
+    df = add_confidence_intervals(df)
+    df = df[
+        [
+            "Date",
+            "Region",
+            "Latitude",
+            "Longitude",
+            "Magnitude",
+            "Magnitude Forecast",
+            "Lower 90 Magnitude Forecast",
+            "Upper 90 Magnitude Forecast",
+            "Lower 50 Magnitude Forecast",
+            "Upper 50 Magnitude Forecast",
+            "Depth",
+            "Depth Forecast",
+            "Lower 90 Depth Forecast",
+            "Upper 90 Depth Forecast",
+            "Lower 50 Depth Forecast",
+            "Upper 50 Depth Forecast",
+        ]
+    ]
     date = pd.Timestamp.now() - pd.Timedelta(days=7)
     return df.loc[df.Date >= date]
 
@@ -319,5 +390,22 @@ def forecast_earthquakes() -> pd.DataFrame:
     df = get_forecast()
     today = pd.Timestamp.now()
     df = df.loc[df.Date > today]
-    df = df[["Date", "Region", "Latitude", "Longitude", "Magnitude Forecast", "Depth Forecast"]]
+    df = df[
+        [
+            "Date",
+            "Region",
+            "Latitude",
+            "Longitude",
+            "Magnitude Forecast",
+            "Lower 90 Magnitude Forecast",
+            "Upper 90 Magnitude Forecast",
+            "Lower 50 Magnitude Forecast",
+            "Upper 50 Magnitude Forecast",
+            "Depth Forecast",
+            "Lower 90 Depth Forecast",
+            "Upper 90 Depth Forecast",
+            "Lower 50 Depth Forecast",
+            "Upper 50 Depth Forecast",
+        ]
+    ]
     return df
