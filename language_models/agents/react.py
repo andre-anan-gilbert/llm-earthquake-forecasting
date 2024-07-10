@@ -123,7 +123,7 @@ class ReActAgent(BaseModel):
             tool_names = ", ".join(list(self.tools.keys()))
             observation = (
                 "Your response format was incorrect."
-                + " Look at the JSON format below and correct your answer."
+                + " Please correct your answer by using the JSON format below."
                 + "\n\nPlease ALWAYS use the following JSON format:"
                 + '\n{\n  "thought": "Explain your thought. Consider previous and subsequent steps",'
                 + f'\n  "tool": "The tool to use. Must be one of {tool_names}",'
