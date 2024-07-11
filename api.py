@@ -11,69 +11,7 @@ import requests
 import streamlit as st
 from scipy.stats import norm
 
-
-@st.cache_data
-def get_recent_earthquakes(
-    start_time: datetime = (datetime.now() - timedelta(days=30)).date(),
-    end_time: datetime = datetime.now().date(),
-    limit: int = 20000,
-    min_depth: int = -100,
-    max_depth: int = 1000,
-    min_magnitude: int | None = None,
-    max_magnitude: int | None = None,
-    alert_level: str | None = None,
-) -> pd.DataFrame:
-    params = {
-        "format": "csv",
-        "starttime": start_time,
-        "endtime": end_time,
-        "limit": limit,
-        "mindepth": min_depth,
-        "maxdepth": max_depth,
-        "eventtype": "earthquake",
-    }
-    if min_magnitude is not None:
-        params["minmagnitude"] = min_magnitude
-    if max_magnitude is not None:
-        params["maxmagnitude"] = max_magnitude
-    if alert_level is not None:
-        params["alertlevel"] = alert_level
-    url = "https://earthquake.usgs.gov/fdsnws/event/1/query?" + parse.urlencode(params)
-    return pd.read_csv(url)
-
-
-@st.cache_data
-def count_earthquakes(
-    start_time: datetime = (datetime.now() - timedelta(days=30)).date(),
-    end_time: datetime = datetime.now().date(),
-    limit: int = 20000,
-    min_depth: int = -100,
-    max_depth: int = 1000,
-    min_magnitude: int | None = None,
-    max_magnitude: int | None = None,
-    alert_level: str | None = None,
-) -> int:
-    params = {
-        "format": "geojson",
-        "starttime": start_time,
-        "endtime": end_time,
-        "limit": limit,
-        "mindepth": min_depth,
-        "maxdepth": max_depth,
-        "minmagnitude": min_magnitude,
-        "maxmagnitude": max_magnitude,
-        "alertlevel": alert_level,
-        "eventtype": "earthquake",
-    }
-    return requests.get(
-        "https://earthquake.usgs.gov/fdsnws/event/1/count",
-        params=params,
-        timeout=None,
-    ).json()
-
-
-_START_LAG = 3
-_END_LAG = 10
+_LAGS = 7
 _MEDIAN_LATITUDE = {
     "Alaska": 61.1224,
     "Aleutian Islands": 51.7672,
@@ -101,6 +39,8 @@ _MEDIAN_LATITUDE = {
     "Washington": 46.5871667,
     "Wyoming": 4,
 }
+
+
 _MEDIAN_LONGITUDE = {
     "Alaska": -151.1221,
     "Aleutian Islands": 178.314,
@@ -166,9 +106,69 @@ def get_regions() -> list[str]:
     ) & set(df.region.unique())
 
 
+@st.cache_data
+def get_recent_earthquakes(
+    start_time: datetime = (datetime.now() - timedelta(days=30)).date(),
+    end_time: datetime = datetime.now().date(),
+    limit: int = 20000,
+    min_depth: int = -100,
+    max_depth: int = 1000,
+    min_magnitude: int | None = None,
+    max_magnitude: int | None = None,
+    alert_level: str | None = None,
+) -> pd.DataFrame:
+    params = {
+        "format": "csv",
+        "starttime": start_time,
+        "endtime": end_time,
+        "limit": limit,
+        "mindepth": min_depth,
+        "maxdepth": max_depth,
+        "eventtype": "earthquake",
+    }
+    if min_magnitude is not None:
+        params["minmagnitude"] = min_magnitude
+    if max_magnitude is not None:
+        params["maxmagnitude"] = max_magnitude
+    if alert_level is not None:
+        params["alertlevel"] = alert_level
+    url = "https://earthquake.usgs.gov/fdsnws/event/1/query?" + parse.urlencode(params)
+    return pd.read_csv(url)
+
+
+@st.cache_data
+def count_earthquakes(
+    start_time: datetime = (datetime.now() - timedelta(days=30)).date(),
+    end_time: datetime = datetime.now().date(),
+    limit: int = 20000,
+    min_depth: int = -100,
+    max_depth: int = 1000,
+    min_magnitude: int | None = None,
+    max_magnitude: int | None = None,
+    alert_level: str | None = None,
+) -> int:
+    params = {
+        "format": "geojson",
+        "starttime": start_time,
+        "endtime": end_time,
+        "limit": limit,
+        "mindepth": min_depth,
+        "maxdepth": max_depth,
+        "minmagnitude": min_magnitude,
+        "maxmagnitude": max_magnitude,
+        "alertlevel": alert_level,
+        "eventtype": "earthquake",
+    }
+    return requests.get(
+        "https://earthquake.usgs.gov/fdsnws/event/1/count",
+        params=params,
+        timeout=None,
+    ).json()
+
+
 @st.cache_resource
 def load_model() -> cb.CatBoostRegressor:
-    path = os.path.join(os.path.dirname(__file__), "./ml/multi_output_model")
+    path = os.path.join(os.path.dirname(__file__), "./ml/forecasting_model")
     model = cb.CatBoostRegressor(cat_features=["region"])
     return model.load_model(path)
 
@@ -222,7 +222,7 @@ def preprocess_data(df: pd.DataFrame, region: str | None = None) -> pd.DataFrame
     return df
 
 
-def create_features(df: pd.DataFrame, region: str | None) -> pd.DataFrame:
+def create_features(df: pd.DataFrame, region: str | None, horizon: int) -> pd.DataFrame:
     df = df.copy()
 
     if region is None:
@@ -230,12 +230,12 @@ def create_features(df: pd.DataFrame, region: str | None) -> pd.DataFrame:
         df = df.loc[df.region.isin(regions)]
         df = (
             df.groupby("region")[["region", "mag", "depth"]]
-            .apply(lambda group: reindex(group, 3), include_groups=False)
+            .apply(lambda group: reindex(group, horizon), include_groups=False)
             .reset_index(0, drop=True)
         )
     else:
         start_date = df.index.min()
-        end_date = pd.Timestamp((datetime.now() + timedelta(days=3)).date())
+        end_date = pd.Timestamp((datetime.now() + timedelta(days=horizon)).date())
         date_range = pd.date_range(start=start_date, end=end_date, freq="d")
         df = df.reindex(date_range)
         df.region = df.region.ffill()
@@ -244,45 +244,27 @@ def create_features(df: pd.DataFrame, region: str | None) -> pd.DataFrame:
     df["dayofweek"] = df.index.dayofweek
     df["dayofyear"] = df.index.dayofyear
 
-    for i in range(_START_LAG, _END_LAG + 1):
+    for i in range(1, _LAGS + 1):
         df[f"mag_lag_{i}"] = df.groupby("region").mag.shift(i)
 
-    for i in range(_START_LAG, _END_LAG + 1):
+    for i in range(1, _LAGS + 1):
         df[f"depth_lag_{i}"] = df.groupby("region").depth.shift(i)
 
-    df[f"mag_rolling_mean_{_START_LAG}"] = df.groupby("region").mag.transform(
-        lambda x: x.rolling(window=_START_LAG).mean()
-    )
-    df[f"mag_rolling_std_{_START_LAG}"] = df.groupby("region").mag.transform(
-        lambda x: x.rolling(window=_START_LAG).std()
-    )
-    df[f"depth_rolling_mean_{_START_LAG}"] = df.groupby("region").depth.transform(
-        lambda x: x.rolling(window=_START_LAG).mean()
-    )
-    df[f"depth_rolling_std_{_START_LAG}"] = df.groupby("region").depth.transform(
-        lambda x: x.rolling(window=_START_LAG).std()
-    )
-
-    df[f"mag_rolling_mean_{_END_LAG}"] = df.groupby("region").mag.transform(lambda x: x.rolling(window=_END_LAG).mean())
-    df[f"mag_rolling_std_{_END_LAG}"] = df.groupby("region").mag.transform(lambda x: x.rolling(window=_END_LAG).std())
-    df[f"depth_rolling_mean_{_END_LAG}"] = df.groupby("region").depth.transform(
-        lambda x: x.rolling(window=_END_LAG).mean()
-    )
-    df[f"depth_rolling_std_{_END_LAG}"] = df.groupby("region").depth.transform(
-        lambda x: x.rolling(window=_END_LAG).std()
-    )
+    df["mag_ewma"] = df.groupby("region")["mag"].transform(lambda x: x.ewm(span=7, adjust=False).mean())
+    df["depth_ewma"] = df.groupby("region")["depth"].transform(lambda x: x.ewm(span=7, adjust=False).mean())
 
     return df
 
 
-def add_confidence_intervals(df: pd.DataFrame) -> pd.DataFrame:
+def add_confidence_intervals(df) -> pd.DataFrame:
     df = df.copy()
     today = pd.Timestamp.now()
-    df_past = df.loc[df.Date <= today]
-    df_past["horizon"] = np.nan
-    df_future = df.loc[df.Date > today]
+    df_past = df.loc[df.Date <= today].copy()
+    df_future = df.loc[df.Date > today].copy()
 
-    df_future["horizon"] = df_future.index + 1
+    df_past.loc[:, "horizon"] = np.nan
+    df_future.loc[:, "horizon"] = np.arange(1, len(df_future) + 1)
+
     magnitude_error = df_past["Magnitude"] - df_past["Magnitude Forecast"]
     depth_error = df_past["Depth"] - df_past["Depth Forecast"]
     magnitude_std = np.std(magnitude_error, ddof=1)
@@ -291,66 +273,99 @@ def add_confidence_intervals(df: pd.DataFrame) -> pd.DataFrame:
     z_90 = norm.ppf(0.95)
     z_50 = norm.ppf(0.75)
 
-    df_past["magnitude_std"] = magnitude_std
-    df_past["depth_std"] = depth_std
+    df_past.loc[:, "magnitude_std"] = magnitude_std
+    df_past.loc[:, "depth_std"] = depth_std
 
-    df_past["Lower 90 Magnitude Forecast"] = df_past["Magnitude Forecast"] - z_90 * df_past["magnitude_std"]
-    df_past["Upper 90 Magnitude Forecast"] = df_past["Magnitude Forecast"] + z_90 * df_past["magnitude_std"]
+    df_past.loc[:, "Lower 90 Magnitude Forecast"] = df_past["Magnitude Forecast"] - z_90 * df_past["magnitude_std"]
+    df_past.loc[:, "Upper 90 Magnitude Forecast"] = df_past["Magnitude Forecast"] + z_90 * df_past["magnitude_std"]
 
-    df_past["Lower 90 Depth Forecast"] = df_past["Depth Forecast"] - z_90 * df_past["depth_std"]
-    df_past["Upper 90 Depth Forecast"] = df_past["Depth Forecast"] + z_90 * df_past["depth_std"]
+    df_past.loc[:, "Lower 90 Depth Forecast"] = df_past["Depth Forecast"] - z_90 * df_past["depth_std"]
+    df_past.loc[:, "Upper 90 Depth Forecast"] = df_past["Depth Forecast"] + z_90 * df_past["depth_std"]
 
-    df_past["Lower 50 Magnitude Forecast"] = df_past["Magnitude Forecast"] - z_50 * df_past["magnitude_std"]
-    df_past["Upper 50 Magnitude Forecast"] = df_past["Magnitude Forecast"] + z_50 * df_past["magnitude_std"]
+    df_past.loc[:, "Lower 50 Magnitude Forecast"] = df_past["Magnitude Forecast"] - z_50 * df_past["magnitude_std"]
+    df_past.loc[:, "Upper 50 Magnitude Forecast"] = df_past["Magnitude Forecast"] + z_50 * df_past["magnitude_std"]
 
-    df_past["Lower 50 Depth Forecast"] = df_past["Depth Forecast"] - z_50 * df_past["depth_std"]
-    df_past["Upper 50 Depth Forecast"] = df_past["Depth Forecast"] + z_50 * df_past["depth_std"]
+    df_past.loc[:, "Lower 50 Depth Forecast"] = df_past["Depth Forecast"] - z_50 * df_past["depth_std"]
+    df_past.loc[:, "Upper 50 Depth Forecast"] = df_past["Depth Forecast"] + z_50 * df_past["depth_std"]
 
-    df_future["magnitude_std"] = magnitude_std * np.sqrt(df_future["horizon"])
-    df_future["depth_std"] = depth_std * np.sqrt(df_future["horizon"])
+    df_future.loc[:, "magnitude_std"] = magnitude_std * np.sqrt(df_future["horizon"])
+    df_future.loc[:, "depth_std"] = depth_std * np.sqrt(df_future["horizon"])
 
-    df_future["Lower 90 Magnitude Forecast"] = df_future["Magnitude Forecast"] - z_90 * df_future["magnitude_std"]
-    df_future["Upper 90 Magnitude Forecast"] = df_future["Magnitude Forecast"] + z_90 * df_future["magnitude_std"]
+    df_future.loc[:, "Lower 90 Magnitude Forecast"] = (
+        df_future["Magnitude Forecast"] - z_90 * df_future["magnitude_std"]
+    )
+    df_future.loc[:, "Upper 90 Magnitude Forecast"] = (
+        df_future["Magnitude Forecast"] + z_90 * df_future["magnitude_std"]
+    )
 
-    df_future["Lower 90 Depth Forecast"] = df_future["Depth Forecast"] - z_90 * df_future["depth_std"]
-    df_future["Upper 90 Depth Forecast"] = df_future["Depth Forecast"] + z_90 * df_future["depth_std"]
+    df_future.loc[:, "Lower 90 Depth Forecast"] = df_future["Depth Forecast"] - z_90 * df_future["depth_std"]
+    df_future.loc[:, "Upper 90 Depth Forecast"] = df_future["Depth Forecast"] + z_90 * df_future["depth_std"]
 
-    df_future["Lower 50 Magnitude Forecast"] = df_future["Magnitude Forecast"] - z_50 * df_future["magnitude_std"]
-    df_future["Upper 50 Magnitude Forecast"] = df_future["Magnitude Forecast"] + z_50 * df_future["magnitude_std"]
+    df_future.loc[:, "Lower 50 Magnitude Forecast"] = (
+        df_future["Magnitude Forecast"] - z_50 * df_future["magnitude_std"]
+    )
+    df_future.loc[:, "Upper 50 Magnitude Forecast"] = (
+        df_future["Magnitude Forecast"] + z_50 * df_future["magnitude_std"]
+    )
 
-    df_future["Lower 50 Depth Forecast"] = df_future["Depth Forecast"] - z_50 * df_future["depth_std"]
-    df_future["Upper 50 Depth Forecast"] = df_future["Depth Forecast"] + z_50 * df_future["depth_std"]
+    df_future.loc[:, "Lower 50 Depth Forecast"] = df_future["Depth Forecast"] - z_50 * df_future["depth_std"]
+    df_future.loc[:, "Upper 50 Depth Forecast"] = df_future["Depth Forecast"] + z_50 * df_future["depth_std"]
+
+    df_future.loc[:, "Magnitude"] = np.nan
+    df_future.loc[:, "Depth"] = np.nan
+
     return pd.concat([df_past, df_future], axis=0)
+
+
+def add_confidence_intervals_per_region(df: pd.DataFrame, region: str | None = None) -> pd.DataFrame:
+    if region is None:
+        return (
+            df.groupby("Region")[
+                [
+                    "Date",
+                    "Magnitude",
+                    "Depth",
+                    "Region",
+                    "Magnitude Forecast",
+                    "Depth Forecast",
+                    "Latitude",
+                    "Longitude",
+                ]
+            ]
+            .apply(add_confidence_intervals)
+            .reset_index(drop=True)
+        )
+    return add_confidence_intervals(df)
 
 
 def get_forecast(region: str | None = None) -> pd.DataFrame:
     model = load_model()
     df = get_recent_earthquakes()
     df = preprocess_data(df, region)
-    df = create_features(df, region)
-    features = (
-        [
-            "day",
-            "dayofweek",
-            "dayofyear",
-            f"mag_rolling_mean_{_START_LAG}",
-            f"mag_rolling_std_{_START_LAG}",
-            f"depth_rolling_mean_{_START_LAG}",
-            f"depth_rolling_std_{_START_LAG}",
-            f"mag_rolling_mean_{_END_LAG}",
-            f"mag_rolling_std_{_END_LAG}",
-            f"depth_rolling_mean_{_END_LAG}",
-            f"depth_rolling_std_{_END_LAG}",
-        ]
-        + [f"mag_lag_{i}" for i in range(_START_LAG, _END_LAG + 1)]
-        + [f"depth_lag_{i}" for i in range(_START_LAG, _END_LAG + 1)]
-    )
-    cat_features = ["region"]
-    forecast = model.predict(df[features + cat_features])
-    df_forecast = pd.DataFrame(forecast, columns=["Magnitude Forecast", "Depth Forecast"])
+
+    # Forecast earthquakes for 3 days
+    for horizon in range(1, 3 + 1):
+        df = create_features(df, region, horizon)
+        features = (
+            [
+                "day",
+                "dayofweek",
+                "dayofyear",
+                "mag_ewma",
+                "depth_ewma",
+            ]
+            + [f"mag_lag_{i}" for i in range(1, _LAGS + 1)]
+            + [f"depth_lag_{i}" for i in range(1, _LAGS + 1)]
+        )
+        cat_features = ["region"]
+        forecast = model.predict(df[features + cat_features])
+        df["mag_forecast"] = forecast[:, 0]
+        df["depth_forecast"] = forecast[:, 1]
+        df.mag = df.mag.fillna(df.mag_forecast)
+        df.depth = df.depth.fillna(df.depth_forecast)
+
     df = df.reset_index()
-    df = df.join(df_forecast)
-    df = df[["index", "mag", "Magnitude Forecast", "depth", "Depth Forecast", "region"]]
+    df = df[["index", "mag", "mag_forecast", "depth", "depth_forecast", "region"]]
     df["Latitude"] = df.region.map(_MEDIAN_LATITUDE)
     df["Longitude"] = df.region.map(_MEDIAN_LONGITUDE)
     df = df.rename(
@@ -359,9 +374,11 @@ def get_forecast(region: str | None = None) -> pd.DataFrame:
             "mag": "Magnitude",
             "depth": "Depth",
             "region": "Region",
+            "mag_forecast": "Magnitude Forecast",
+            "depth_forecast": "Depth Forecast",
         }
     )
-    df = add_confidence_intervals(df)
+    df = add_confidence_intervals_per_region(df, region)
     df = df[
         [
             "Date",
