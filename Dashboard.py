@@ -37,6 +37,7 @@ with col1.container(border=True):
         value=num_earthquakes_past_month,
         delta="Last 30 days",
         delta_color="off",
+        help="Estimated Fatalities: 0, Estimated Losses (USD): < $1 million",
     )
 
 with col2.container(border=True):
@@ -47,6 +48,7 @@ with col2.container(border=True):
         value=num_local_earthquakes_past_month,
         delta="Last 30 days",
         delta_color="off",
+        help="Estimated Fatalities: 1 - 99, Estimated Losses (USD): $1 million - $100 million",
     )
 
 with col3.container(border=True):
@@ -57,6 +59,7 @@ with col3.container(border=True):
         value=num_national_earthquakes_past_month,
         delta="Last 30 days",
         delta_color="off",
+        help="Estimated Fatalities: 100 - 999, Estimated Losses (USD): $100 million - $1 billion",
     )
 
 with col4.container(border=True):
@@ -67,6 +70,7 @@ with col4.container(border=True):
         value=num_international_earthquakes_past_month,
         delta="Last 30 days",
         delta_color="off",
+        help="Estimated Fatalities: 1,000+, Estimated Losses (USD): $1 billion+",
     )
 
 df = forecast_earthquakes()
