@@ -47,6 +47,7 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 pytz==2024.1
 referencing==0.35.1
+regex==2024.5.15
 requests==2.32.3
 rich==13.7.1
 rpds-py==0.19.0
@@ -59,6 +60,7 @@ statsmodels==0.14.2
 streamlit==1.36.0
 tenacity==8.5.0
 threadpoolctl==3.5.0
+tiktoken==0.7.0
 toml==0.10.2
 toolz==0.12.1
 tornado==6.4.1
