@@ -25,7 +25,7 @@ markdown-it-py==3.0.0
 MarkupSafe==2.1.5
 matplotlib==3.9.1
 mdurl==0.1.2
-numpy==2.0.1
+numpy==1.26.4
 packaging==24.1
 pandas==2.2.2
 patsy==0.5.6
@@ -66,3 +66,4 @@ tqdm==4.66.4
 typing_extensions==4.12.2
 tzdata==2024.1
 urllib3==2.2.2
+watchdog==4.0.1
