@@ -22,7 +22,7 @@ As earthquakes are not equally distributed over the surface of the earth,
 we decided to forecast earthquakes for the 25 most endangered regions on
 the planet. This facilitates the forecasting process while only marginally
 reducing our use case. To fulfill our goal of warning people about potential
-dangers we effectively need to forecast the magnitude, depth and location of
+dangers we effectively need to forecast the magnitude, depth, and location of
 an upcoming earthquake. A reliable prediction of these three features would
 enable users to evaluate their situation and take preliminary action if needed.
 
@@ -40,7 +40,7 @@ on seismic events using various parameters such as time, location, depth, and ma
 We queried the catalog for earthquakes from the past 100 years. Due to
 limited data prior 1970, we opted to use the data from the past 30 years
 for training (Figure \ref{fig:world-map}). Given our focus on building an end-to-end machine learning
-application, we opted to use this free API, which allows us to forecast
+application, we chose to use this free API, which allows us to forecast
 future earthquakes based on live data. This approach closely resembles a
 production system, enhancing the realism and practicality of our forecasting
 model. The dataset, available in formats such as GeoJSON, XML, and CSV, was
@@ -55,9 +55,9 @@ instrumental in analyzing seismic activity trends and developing the forecasting
 \end{figure}
 
 The dataset contained detailed information about the time, location (latitude and longitude),
-depth, and magnitude of an occurring earthquake. Additionally, there are other features
-available on the API. A detailed list can be found on the \ac{USGS} website
-\footnote{\url{https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php}}.
+depth, and magnitude of an occurring earthquake. Additionally, the API offers
+other features which can be found on the
+\ac{USGS} website \footnote{\url{https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php}}.
 
 \subsubsection{Preprocessing}
 
@@ -163,8 +163,8 @@ choice, particularly with the volatile nature of earthquake data. Additionally,
 CatBoost can capture complex feature interactions without extensive feature
 engineering, streamlining the modeling process and enhancing overall accuracy.
 
-While tree-based models often struggle with forecasting trends, CatBoost regression
-is particularly well-suited for our task for several reasons. The magnitude of
+While tree-based models cannot forecast trends, CatBoost regression
+is well-suited for our task for several reasons. The magnitude of
 earthquakes is capped within a range of [-1, 10], and their depth falls within
   [-100, 1000] meters \parencite{earthquake-data}. In regression trees, predictions
 are made by traversing a series of if-else conditions to reach a leaf node, where
@@ -191,7 +191,7 @@ for categorical features with limited unique values, controlled by the
 \textit{one\_hot\_max\_size} parameter \parencite{catboost-encoding}.
 
 To forecast earthquakes, we predict magnitudes and depths, while for location
-(latitude and longitude), we compute the historic median to reduce model
+(latitude and longitude), we compute the historic median (earthquakes since 1974) to reduce model
 complexity and enhance stability. The forecasting process is performed
 recursively or iteratively: initially, we forecast the data for one day,
 using the predicted values to create features for the subsequent day.
@@ -207,7 +207,7 @@ include temporal attributes such as the day, day of the week, and day of
 the year, which capture the time-dependent aspects of earthquake occurrences.
 Additionally, exponential moving averages for both magnitude and depth are
 included to reflect the trends over recent periods. The model also incorporates
-lagged values for magnitude and depth over a specified range, allowing it to
+lagged values for magnitude and depth over 7 days, allowing it to
 consider past events' influence on current conditions. The inclusion of the
 categorical feature region ensures that the model can account for regional
 differences in earthquake behavior.
@@ -223,7 +223,7 @@ while the target variables are the earthquake magnitude and depth.
 To enhance the model's performance, hyperparameter tuning is performed using
 grid search, as shown in Table \ref{table:hyperparameters}. This involves
 testing various combinations of hyperparameters
-such as learning rate, model depth, and L2 leaf regularization. The grid
+such as learning rate, model depth, and L2 leaf regularization. Grid
 search evaluates these combinations to identify the optimal parameters that
 yield the best predictive performance. This systematic approach to feature
 selection, data preparation, and hyperparameter tuning aims to develop a
@@ -239,7 +239,8 @@ depth across different regions.
     Depth                   & 4, 6, \textbf{10}        \\ \midrule
     L2 Leaf Regularization  & 1, 3, \textbf{5}, 7, 9   \\ \bottomrule
   \end{tabular}
-  \caption{Hyperparameter values explored during grid search. Best hyperparameters highlighted in bold.}
+  \caption{Hyperparameter values explored during grid search. Best hyperparameters highlighted in bold
+    for 1000 iterations (trees).}
   \label{table:hyperparameters}
 \end{table}
 
@@ -248,7 +249,7 @@ After training the CatBoost Regressor model for earthquake forecasting,
 it is crucial to evaluate its performance using several metrics and visualization techniques.
 The performance of the time series forecasting model is assessed using a variety of
 metrics that provide a comprehensive view of its accuracy and reliability. The selected
-metrics are the \ac{MAE}, the \ac{RMSE}, the R2-Score and the adjusted R2 Score
+metrics are the \ac{MAE}, the \ac{RMSE}, the R2 score and the adjusted R2 score
 (Table \ref{table:model-metrics}).
 These metrics collectively offer insights into the error magnitude and the goodness-of-fit
 of the model. The rationale behind these metrics is explained in \ref{sec:Forecasting}.
@@ -279,21 +280,21 @@ they provide an important perspective on how significant the larger errors are
 in the context of the model's predictions. A lower RMSE indicates a better fit,
 and our RMSE value suggests a reasonable performance with some sensitivity to larger errors.
 
-For our model, the R2 is 0.9495 (Figure \ref{table:model-metrics}), signifying
+For our model, the R2 score is 0.9495 (Figure \ref{table:model-metrics}), signifying
 that approximately 94.95\% of the variance in the data is explained by the model.
 This high R2 value suggests that the model fits the data very well and is capable
 of capturing the underlying patterns in the time series.
 
-The Adjusted R2 for our model is 0.9495 (Figure \ref{table:model-metrics}),
+The Adjusted R2 score for our model is 0.9495 (Figure \ref{table:model-metrics}),
 which is very close to the R2 value. This indicates that the inclusion of
 predictors in the model is justified and that the model does not overfit the data.
 The slight difference between R2 and Adjusted R2 confirms that the model maintains
 a high level of explanatory power while accounting for the number of predictors.
 
 The evaluation of the model using these metrics provides a well-rounded
-understanding of its performance. The low MAE and RMSE values indicate
-that the model has a low level of error, while the high R2 and Adjusted
-R2 values demonstrate a strong fit to the data. Together, these metrics
+understanding of its performance. The low \ac{MAE} and \ac{RMSE} values indicate
+that the model has a low level of error, while the high R2 score and Adjusted
+R2 score values demonstrate a strong fit to the data. Together, these metrics
 suggest that the model is both accurate and reliable for forecasting the
 time series data, making it a valuable tool for predicting future values.
 
@@ -343,19 +344,6 @@ accuracy, such as Indonesia and Chile, may require additional data or
 model adjustments to improve predictive performance. Overall, the
 model demonstrates a better capability for forecasting future depths than magnitudes.
 
-While the model's evaluation metrics, including \ac{MAE}, \ac{RMSE}, R2, and Adjusted R2,
-indicate excellent performance in terms of accuracy and goodness-of-fit,
-it is important to acknowledge a significant limitation: the inherent
-unpredictability of earthquakes. Earthquakes are fundamentally random
-events, much like predicting stock market values, making them
-exceptionally challenging to forecast with high precision. Despite
-the model's robust statistical indicators, the chaotic and complex
-nature of seismic activities means that accurate prediction remains
-elusive. Thus, while the model shows promising results according to
-the chosen metrics, its practical applicability in earthquake
-forecasting is constrained by the unpredictable and stochastic
-nature of the phenomenon itself.
-
 \begin{figure}[hbtp]
   \centering
   \includegraphics[scale=0.18]{img/model-feature-importance.png}
@@ -381,6 +369,20 @@ the recent history of earthquake depth, especially its exponential moving
 average, is the most influential factor in forecasting future earthquake
 magnitudes and depths.
 
+While the model's evaluation metrics, including \ac{MAE}, \ac{RMSE}, R2 score,
+and Adjusted R2 score,
+indicate excellent performance in terms of accuracy and goodness-of-fit,
+it is important to acknowledge a significant limitation: the inherent
+unpredictability of earthquakes. Earthquakes are fundamentally random
+events, much like predicting stock market values, making them
+exceptionally challenging to forecast with high precision. Despite
+the model's robust statistical indicators, the chaotic and complex
+nature of seismic activities means that accurate prediction remains
+elusive. Thus, while the model shows promising results according to
+the chosen metrics, its practical applicability in earthquake
+forecasting is constrained by the unpredictable and stochastic
+nature of the phenomenon itself.
+
 \section{LLM-powered AI Agent}
 Advancements in AI have given rise to AI agents as powerful tools
 for enhancing productivity and communication \parencite{xi2023rise}.
@@ -394,7 +396,7 @@ understanding and communication. For instance, an AI agent trained on
 extensive datasets of text and code can retrieve pertinent articles,
 distill key findings into summaries, or craft tailored content based
 on the preferences of specific target audiences. The potential
-applications of LLM-powered AI agents are vast and diverse, ranging
+applications of \ac{LLM}-powered AI agents are vast and diverse, ranging
 from automating repetitive tasks to supporting complex decision-making
 processes and creative endeavors. However, it is crucial to recognize
 that while AI agents excel in language manipulation and generation, they
@@ -408,7 +410,7 @@ earthquake forecasts. The agent is built using the ReAct prompting
 \parencite{yao2023reactsynergizingreasoningacting} method as shown in
 Source Code \ref{lst:system-prompt}, which enhances its interaction
 capabilities and allows it to provide expert-level responses regarding earthquakes.
-An example of the LLM-powered AI agent in action can be found in Appendix Figure
+An example of the \ac{LLM}-powered AI agent in action can be found in Appendix Figure
 \ref{fig:copilot}.
 
 \begin{lstlisting}[caption={\texttt{system\_prompt.py}}, captionpos=b, label={lst:system-prompt}]
@@ -447,22 +449,22 @@ ReAct prompting is a structured approach used to guide AI agents in
 providing accurate and helpful responses in multi-step problems
 \parencite{yao2023reactsynergizingreasoningacting}. The agent is
 programmed with a specific system prompt that positions it as a
-United States Geological Survey (USGS) expert. This prompt includes
+\ac{USGS} expert. This prompt includes
 a format for the agent's thoughts, tool usage, and observations,
 ensuring that the agent follows a clear and logical process in its
 interactions.
 
-Even though we define a specific output format, the LLM still predicts
+Even though we define a specific output format, the \ac{LLM} still predicts
 the most likely token that should come next, which can lead to errors
 in the output format, such as responding with text instead of JSON.
 This process can be compared to a trial-and-error learning process.
-We then enter a loop of refinement. If the LLM's output can't be
+We then enter a loop of refinement. If the \ac{LLM}'s output can't be
 parsed into the correct format, it's reminded of the requirement
 and prompted to adjust. Conversely, a successful parse leads to the
-LLM's output being used to call a relevant tool. If the tool call
-fails, the LLM is asked to refine it further. This cycle continues
+\ac{LLM}'s output being used to call a relevant tool. If the tool call
+fails, the \ac{LLM} is asked to refine it further. This cycle continues
 until a satisfactory answer is produced, either through a parsable
-output or the LLM exhausting its attempts. This iterative process
+output or the \ac{LLM} exhausting its attempts. This iterative process
 ensures continuous feedback and correction, ultimately aiming to
 achieve the desired outcome: a correct response in the specified format.
 
@@ -470,12 +472,12 @@ Explainable AI agents play a crucial role in fostering trust and
 transparency with users by allowing them to understand the
 decision-making processes of \ac{LLM}s. Through the use of
 techniques such as ReAct prompting \parencite{yao2023reactsynergizingreasoningacting},
-we can visibly demonstrate what the LLM is doing behind the scenes. This
+we can visibly demonstrate what the \ac{LLM} is doing behind the scenes. This
 involves showing the sequence of actions taken by the model, including
 its thoughts, the tools employed, the input provided to these tools,
 the tools' responses, and the model's subsequent thoughts leading to
 the final answer. By offering this level of insight, we can build
-greater confidence in the LLM's outputs and facilitate a more
+greater confidence in the \ac{LLM}'s outputs and facilitate a more
 informed interaction with the technology. An example is shown in Appendix Figure
 \ref{fig:explainable-ai}.
 
@@ -495,14 +497,14 @@ look at the tools used by the AI agent:
   \item \textbf{Query Earthquakes:} This tool searches for
         recent earthquakes based on various parameters such as start
         time, end time, depth, magnitude, and alert level. It utilizes
-        the US Geological Survey (USGS) API to retrieve data in the
+        the \ac{USGS} API to retrieve data in the
         geojson format.
   \item \textbf{Count Earthquakes:} This tool counts and aggregates
         recent earthquake events based on specified criteria. It uses the
         same parameters as the Query Earthquakes tool to filter the events.
   \item \textbf{Find Regions:} This tool retrieves the available
         regions for which earthquake forecasts can be made. It ensures
-        that the LLM is aware of the regions supported by the forecasting
+        that the \ac{LLM} is aware of the regions supported by the forecasting
         model before making predictions.
   \item \textbf{Forecast Earthquakes:} This tool predicts future
         earthquakes in a specified region. It processes the forecast data
@@ -511,18 +513,18 @@ look at the tools used by the AI agent:
 \end{enumerate}
 
 \section{Deployment and Monitoring}
-The first step in deploying our ML application involved containerizing
+The first step in deploying our machine learning application involved containerizing
 the model using Docker\footnote{\url{https://www.docker.com/}}. Docker
 allowed us to package the model along with its dependencies into a
 container, ensuring consistency across different deployment environments.
 After saving the model, we created the Dockerfile and the Docker Image to
 install dependencies and run the code.
 
-For deploying the Flight Base App on Render.com, the team optimally
+For deploying the web application on Render.com, the team
 utilized the platform's versatile features. Render.com uses
-Amazon Web Services (AWS) under the hood, which provided the
-team with a solid infrastructure and worldwide availability through
-the AWS data center in Frankfurt. The app deployment is automatic as
+\ac{AWS} under the hood, which provides
+a great infrastructure and worldwide availability through
+the \ac{AWS} data center in Frankfurt. The app deployment is automatic as
 soon as changes are pushed to the team's GitHub repository and the
 deployment branch is synchronized.
 
@@ -537,13 +539,13 @@ However, this was out of scope for this project.
 
 Additionally, when deploying models in practice, using a platform like
 Kubeflow\footnote{\url{https://www.kubeflow.org/}} is beneficial. Kubeflow
-leverages Kubernetes for machine learning and allows you to write templates
+leverages Kubernetes for machine learning and allows one to write templates
 defining how to deploy models, specifying resources such as RAM, CPU, and GPU,
 as well as managing canary rollouts and other deployment strategies.
 
 The management of environment variables is handled directly through Render.com.
 These are automatically inserted during the build of the Docker container and
-are available to the application. Through this approach, the team ensured that
+are available to the application. Through this approach, we ensured that
 the entire deployment configuration remains clear and efficient, while also
 ensuring a smooth live deployment of the application on Render.com. This
 method minimizes the risk of misconfigurations and simplifies the management
