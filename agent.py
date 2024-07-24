@@ -180,5 +180,5 @@ def get_agent() -> ReActAgent:
         task_prompt_variables=["prompt"],
         tools=tools,
         output_format=Output,
-        iterations=20,
+        iterations=12,
     )

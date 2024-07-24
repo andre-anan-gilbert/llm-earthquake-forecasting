@@ -192,27 +192,30 @@ chat_history = []
 for message in st.session_state.messages:
     prev_steps = []
     with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-        if message["role"] == "assistant":
-            display_widget(st, message["last_tool"])
-            popover = st.popover("View Reasoning", use_container_width=True)
-            for progress in message["chain_of_thought"]:
-                if progress["step"] == "final_answer":
-                    popover.markdown(f":green-background[Final Answer] {progress['content']['content']}")
-                elif progress["step"] == "tool":
-                    tool_name = progress["content"]["name"]
-                    tool_input = progress["content"]["args"]
-                    tool_response = progress["content"]["response"]
-                    popover.markdown(f":orange-background[Tool] {tool_name}")
-                    popover.markdown(f":orange-background[Tool Input] {tool_input}")
-                    popover.markdown(f":orange-background[Tool Response] {tool_response}")
-                    prev_steps.append(f"Tool: {tool_name}")
-                    prev_steps.append(f"Tool Input: {tool_input}")
-                    prev_steps.append(f"Tool Response: {tool_response}")
-                else:
-                    thought = progress["content"]
-                    popover.markdown(f":blue-background[Thought] {thought}")
-                    prev_steps.append(f"Thought: {thought}")
+        if message["content"] is None:
+            st.markdown("Something went wrong...")
+        else:
+            st.markdown(message["content"])
+            if message["role"] == "assistant":
+                display_widget(st, message["last_tool"])
+                popover = st.popover("View Reasoning", use_container_width=True)
+                for progress in message["chain_of_thought"]:
+                    if progress["step"] == "final_answer":
+                        popover.markdown(f":green-background[Final Answer] {progress['content']['content']}")
+                    elif progress["step"] == "tool":
+                        tool_name = progress["content"]["name"]
+                        tool_input = progress["content"]["args"]
+                        tool_response = progress["content"]["response"]
+                        popover.markdown(f":orange-background[Tool] {tool_name}")
+                        popover.markdown(f":orange-background[Tool Input] {tool_input}")
+                        popover.markdown(f":orange-background[Tool Response] {tool_response}")
+                        prev_steps.append(f"Tool: {tool_name}")
+                        prev_steps.append(f"Tool Input: {tool_input}")
+                        prev_steps.append(f"Tool Response: {tool_response}")
+                    else:
+                        thought = progress["content"]
+                        popover.markdown(f":blue-background[Thought] {thought}")
+                        prev_steps.append(f"Thought: {thought}")
 
     if prev_steps:
         chat_history[-1].content += "\n\nThis was your previous work:\n\n" + "\n".join(prev_steps)
