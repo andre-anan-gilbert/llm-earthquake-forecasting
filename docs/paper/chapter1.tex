@@ -114,7 +114,8 @@ analyzing trends and making trading decisions \parencite{dzikevivcius2010ema}.
 Besides computing the trend through a moving average, we can also try to identify
 it using a machine learning model, such as a linear regression. Using this trend, we
 can then forecast future feature values by extending the learned function
-representing the underlying trend within the data over future timestamps.
+representing the underlying trend within the data over future timestamps
+\parencite{prophetpaper}.
 
 \subsection{Seasonality}
 \label{subsec:seasonality}
@@ -277,7 +278,7 @@ Table \ref{tab:timeseries_models}.
         \midrule
         \ac{LSTM}                                                    & Local/Global             \\
         \midrule
-        Transformer-based                                            & Global                   \\
+        Transformer-based                                            & Local/Global             \\
 
         \bottomrule
     \end{tabular}
