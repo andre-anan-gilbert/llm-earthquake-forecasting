@@ -26,8 +26,9 @@ dangers we effectively need to forecast the magnitude, depth, and location of
 an upcoming earthquake. A reliable prediction of these three features would
 enable users to evaluate their situation and take preliminary action if needed.
 
-We have chosen to forecast only the magnitude and depth of earthquakes and
-to use historical median values for the location. This decision is based
+We have decided to forecast only the magnitude and depth of earthquakes,
+while utilizing historical median values (from earthquakes recorded since 1994)
+for the location. This decision is based
 on the fact that most earthquakes occur at the edges of tectonic plates,
 resulting in similar location values for earthquakes within a given region.
 By removing the location values as a forecasting target, the modeling problem
@@ -38,7 +39,7 @@ To forecast, we utilized data from the \ac{USGS} Earthquake Catalog, accessed vi
 the \ac{FDSN} Event Web Service. This service provides comprehensive information
 on seismic events using various parameters such as time, location, depth, and magnitude.
 We queried the catalog for earthquakes from the past 100 years. Due to
-limited data prior 1970, we opted to use the data from the past 30 years
+limited data prior 1990, we opted to use the data from the past 30 years
 for training (Figure \ref{fig:world-map}). Given our focus on building an end-to-end machine learning
 application, we chose to use this free API, which allows us to forecast
 future earthquakes based on live data. This approach closely resembles a
@@ -66,7 +67,7 @@ time series data, particularly in earthquake forecasting. In our study, we began
 by addressing the unevenly spaced timestamps in the dataset. To standardize the
 intervals, we opted for daily aggregation. While we also experimented with hourly
 aggregation, it resulted in prohibitively long model training times - ranging
-from 12 hours to a full day - making daily aggregation the more practical choice.
+from 12 hours to a over day - making daily aggregation the more practical choice.
 
 Our analysis revealed a strong time dependency for most values, extending up to
 40 lags and potentially more in certain regions (Figure \ref{fig:pacf-sample};
@@ -150,7 +151,7 @@ future predictions.
 
 To forecast earthquakes for 25 regions accurately, we employ a global forecasting model.
 Among the various approaches available, tree-based models and \ac{RNNs}, specifically
-\ac{LSTM} networks, are considered due to their ability to handle time-series data
+\ac{LSTM} networks, are considered due to their ability to handle time series data
 effectively. For this particular application, we use CatBoost regression
 \parencite{prokhorenkova2018catboost}, an efficient gradient boosting framework.
 
@@ -191,7 +192,8 @@ for categorical features with limited unique values, controlled by the
 \textit{one\_hot\_max\_size} parameter \parencite{catboost-encoding}.
 
 To forecast earthquakes, we predict magnitudes and depths, while for location
-(latitude and longitude), we compute the historic median (earthquakes since 1974) to reduce model
+(latitude and longitude), we compute the historic median
+(from earthquakes recorded since 1994) to reduce model
 complexity and enhance stability. The forecasting process is performed
 recursively or iteratively: initially, we forecast the data for one day,
 using the predicted values to create features for the subsequent day.
@@ -459,7 +461,7 @@ the most likely token that should come next, which can lead to errors
 in the output format, such as responding with text instead of JSON.
 This process can be compared to a trial-and-error learning process.
 We then enter a loop of refinement. If the \ac{LLM}'s output can't be
-parsed into the correct format, it's reminded of the requirement
+parsed into the correct format, it is reminded of the requirement
 and prompted to adjust. Conversely, a successful parse leads to the
 \ac{LLM}'s output being used to call a relevant tool. If the tool call
 fails, the \ac{LLM} is asked to refine it further. This cycle continues
@@ -486,7 +488,7 @@ informed interaction with the technology. An example is shown in Appendix Figure
 The AI agent designed for earthquake forecasting integrates several tools
 to provide accurate and comprehensive information. These tools, leveraging
 forecasting models and data processing techniques, enhance the agent's
-capability to predict and analyze seismic events. Here’s a detailed
+capability to predict and analyze seismic events. Here is a detailed
 look at the tools used by the AI agent:
 
 \begin{enumerate}
@@ -527,6 +529,11 @@ a great infrastructure and worldwide availability through
 the \ac{AWS} data center in Frankfurt. The app deployment is automatic as
 soon as changes are pushed to the team's GitHub repository and the
 deployment branch is synchronized.
+The management of environment variables is handled directly through Render.com.
+These are automatically inserted during the build of the Docker container and
+are available to the application. Through this approach, we ensured that
+the entire deployment configuration remains clear and efficient, while also
+ensuring a smooth live deployment of the application on Render.com.
 
 To handle the model's computational demands, especially for real-time
 predictions, deploying the Docker container on a cluster with GPU support
@@ -542,14 +549,6 @@ Kubeflow\footnote{\url{https://www.kubeflow.org/}} is beneficial. Kubeflow
 leverages Kubernetes for machine learning and allows one to write templates
 defining how to deploy models, specifying resources such as RAM, CPU, and GPU,
 as well as managing canary rollouts and other deployment strategies.
-
-The management of environment variables is handled directly through Render.com.
-These are automatically inserted during the build of the Docker container and
-are available to the application. Through this approach, we ensured that
-the entire deployment configuration remains clear and efficient, while also
-ensuring a smooth live deployment of the application on Render.com. This
-method minimizes the risk of misconfigurations and simplifies the management
-of sensitive data such as API keys.
 
 Furthermore, effective monitoring of the deployed model is crucial to ensure
 that it continues to perform as expected. Our monitoring process includes

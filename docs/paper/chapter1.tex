@@ -70,7 +70,7 @@ compared to the previous timestamp (Table \ref{tab:time_series_extended}).
     \label{tab:time_series_extended}
 \end{table}
 
-Time step features allow for modeling time dependence. For example, if the time-step
+Time-step features allow for modeling time dependence. For example, if the time-step
 feature counts the days within the month, this can help identifying seasonal
 dependencies of \textit{Feature\_1} within the month (Table \ref{tab:time_series_extended}).
 On the other hand, lag features help identify serial dependence, meaning the correlation of
@@ -181,7 +181,7 @@ Another notable mention is cyclic time series, a type of data sequence character
 by periodic fluctuations that occur over irregular intervals, often spanning several
 years. Unlike seasonal variations, which follow a regular, predictable pattern within
 a year, cyclic patterns are influenced by broader economic, social, or environmental
-factors and do not have a fixed period \parencite[p.4102]{gharehbaghi2017deep}.
+factors and do not have a fixed period \parencite[p. 4102]{gharehbaghi2017deep}.
 Possible reasons for those cycles are long-term influences such as business cycles,
 economic expansions, and recessions.
 
@@ -264,21 +264,21 @@ Table \ref{tab:timeseries_models}.
     \centering
     \begin{tabular}{ll}
         \toprule
-        \textbf{Model type}                                          & \textbf{Can be used for} \\
+        \textbf{Model}                                          & \textbf{Local/Global} \\
         \midrule
-        Linear Regression                                            & Local                    \\
+        Linear Regression                                       & Local                 \\
         \midrule
-        \ac{ARIMA}                                                   & Local                    \\
+        \ac{ARIMA}                                              & Local                 \\
         \midrule
-        \ac{ETS}                                                     & Local                    \\
+        \ac{ETS}                                                & Local                 \\
         \midrule
-        Tree-based (Decision Tree, Random Forest, Gradient Boosting) & Local/Global             \\
+        Trees (Decision Tree, Random Forest, Gradient Boosting) & Local/Global          \\
         \midrule
-        \ac{RNNs}                                                    & Local/Global             \\
+        \ac{RNNs}                                               & Local/Global          \\
         \midrule
-        \ac{LSTM}                                                    & Local/Global             \\
+        \ac{LSTM}                                               & Local/Global          \\
         \midrule
-        Transformer-based                                            & Local/Global             \\
+        Transformer                                             & Local/Global          \\
 
         \bottomrule
     \end{tabular}
@@ -291,7 +291,7 @@ solved \parencite{salinas2020deepar}. Regression algorithms, such as linear and
 polynomial regression, are foundational techniques that model the relationship
 between independent variables and the target variable, providing interpretable
 and straightforward forecasts. Tree-based methods, including decision trees,
-random forests, and gradient boosting machines, are powerful for handling complex,
+random forests, and gradient boosting models, are powerful for handling complex,
 non-linear relationships and interactions among features, often delivering robust
 performance with less need for extensive data preprocessing. \ac{RNNs} excel in
 time series forecasting due to their ability to maintain memory of previous inputs,
@@ -321,7 +321,7 @@ development, making it an attractive option for rapid deployment in diverse
 forecasting scenarios.
 
 \subsection*{Hybrid Models}
-Hybrid models are sophisticated systems that integrate at least two distinct modeling approaches.
+Hybrid models are sophisticated models that integrate at least two distinct modeling approaches.
 By combining the strengths of each model, hybrid models effectively mitigate their individual
 weaknesses. This technique involves training the first model on the original time series data
 and then training the second model on the residuals (errors) of the first model. The final
@@ -338,7 +338,7 @@ The ensemble comprises multiple models, each specializing in predicting differen
 The first model predicts the trend, which could be piecewise linear (allowing for multiple
 changepoints, in which the growth rate can change) or logistic. The second model accounts
 for the seasonality component (yearly, weekly or daily) using the Fourier series (see
-chapter \ref{subsec:seasonality}). Thirdly, one of the models accounts for holiday effects,
+Chapter \ref{subsec:seasonality}). Thirdly, one of the models accounts for holiday effects,
 as holidays can cause significant deviations from the usual patterns. The user can input a
 list of holidays and the model will include their effects. Moreover, Prophet can include
 additional regressor effects if the user provides external factors that are believed to
