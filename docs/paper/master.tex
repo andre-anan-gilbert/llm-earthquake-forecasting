@@ -6,26 +6,26 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%	ANLEITUNG: 
+%	ANLEITUNG:
 %   1. Ersetzen Sie firmenlogo.jpg im Verzeichnis img
-%   2. Passen Sie alle Stellen im Dokument an, die mit 
-%      @stud 
+%   2. Passen Sie alle Stellen im Dokument an, die mit
+%      @stud
 %      markiert sind
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%	ACHTUNG: 
-%   Für das Erstellen des Literaturverzeichnisses wird das 
-%   modernere Paket biblatex in Kombination mit biber 
+%	ACHTUNG:
+%   Für das Erstellen des Literaturverzeichnisses wird das
+%   modernere Paket biblatex in Kombination mit biber
 %   verwendet - nicht mehr das ältere Paket BibTex!
 %
-%   Bitte stellen Sie Ihre TeX-Umgebung entsprechend ein (z.B. TeXStudio): 
+%   Bitte stellen Sie Ihre TeX-Umgebung entsprechend ein (z.B. TeXStudio):
 %   Einstellungen --> Erzeugen --> Standard Bibliographieprogramm: biber
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \documentclass[fontsize=12pt,BCOR=5mm,DIV=12,parskip=half,listof=totoc,
                paper=a4,toc=bibliography,pointlessnumbers]{scrreprt}
-               
+
 \usepackage[utf8]{inputenc}
 
 %% LANGUAGE SETTINGS
@@ -44,28 +44,28 @@
 % @stud: Zitierstil in package biblatex unten wählen
 %
 % NUMERIC Style - e. g. [12]
-% style=numeric 
+% style=numeric
 %
-% IEEE Style - numeric kind of style 
-% style=ieee 
+% IEEE Style - numeric kind of style
+% style=ieee
 %
 % ALPHABETIC Style - e. g. [AB12]
-% style=alphabetic 
+% style=alphabetic
 %
-% HARVARD Style 
-% style=apa 
+% HARVARD Style
+% style=apa
 %
-% CHICAGO Style 
+% CHICAGO Style
 % style=authoryear
 %
 % Position des Zitats:
 %
-% autocite=inline 
+% autocite=inline
 %
 % (!!) FOOTNOTE POSITION NOT RECOMMENDED IN MINT DOMAIN:
 % autocite=footnote
 %
-\usepackage[backend=biber, autocite=inline, style=apa]{biblatex} 	
+\usepackage[backend=biber, autocite=inline, style=apa]{biblatex}
 \usepackage{makeidx}                  % allows index generation
 \usepackage{listings}	                %Format Listings properly
 \usepackage{lipsum}                   % Blindtext
@@ -74,7 +74,7 @@
 \usepackage{caption}	                % better Captions
 \usepackage{booktabs}                 % nicer Tabs
 \usepackage[hidelinks=true]{hyperref} % keine roten Markierungen bei Links
-\usepackage{fnpct}                    % Correct superscripts 
+\usepackage{fnpct}                    % Correct superscripts
 \usepackage{calc}                     % Used for extra space below footsepline, in particular
 \usepackage{array}
 \usepackage{acronym}
@@ -124,14 +124,14 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % LITERATURVERZEICHNIS
-% @stud: Literaturverzeichnis in Datei bibliography.bib anpassen. 
+% @stud: Literaturverzeichnis in Datei bibliography.bib anpassen.
 %
 % [Alternative zu Verwendung von \initializeBibliography: Citavi ... (dazu eigenes LaTex Coding verwenden)]
 %
 \addbibresource{bibliography.bib}
 \DefineBibliographyStrings{ngerman}{andothers = {{et\,al\adddot}},}
 
-% Elementare Konfigurationen und Definitionen werden geladen 
+% Elementare Konfigurationen und Definitionen werden geladen
 % @stud: gegebenenfalls anpassen
 %
 \input{config}
@@ -159,8 +159,8 @@
 %
 % @stud: ewerkl.tex bearbeiten
 %
-% \input{ewerkl} 
-% \cleardoublepage  
+% \input{ewerkl}
+% \cleardoublepage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -168,7 +168,7 @@
 %
 % @stud: nondisclosurenotice.tex bearbeiten
 %
-% \input{nondisclosurenotice} 
+% \input{nondisclosurenotice}
 % \cleardoublepage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -178,7 +178,7 @@
 % @stud: acknowledge.tex bearbeiten
 %
 % \input{acknowledge}
-% \cleardoublepage 
+% \cleardoublepage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -211,14 +211,14 @@
 
 % Abkürzungsverzeichnis
 % @stud: acronyms.tex bearbeiten
-\input{acronyms} 
+\input{acronyms}
 \cleardoublepage
 
 \onehalfspacing
 
 %	Kurzfassung / Abstract
 % @stud: abstract.tex bearbeiten
-\input{abstract} 
+\input{abstract}
 \cleardoublepage
 
 \initializeText
@@ -250,19 +250,19 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ANHÄNGE
 %
-% @stud: einzelne Anhänge bearbeiten und eigene Anhänge hier einfügen 
+% @stud: einzelne Anhänge bearbeiten und eigene Anhänge hier einfügen
 %        die nachfolgenden Zeilen deaktivieren, wenn keine Anhänge verwendet werden
 %
 \initializeAppendix
 \input{appendix1}
-% \input{appendix2}
+\input{appendix2}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \singlespacing
 
 %\ihead{}
-%\printbibliography[title=\Literaturverzeichnis] 
-\printbibliography 
+%\printbibliography[title=\Literaturverzeichnis]
+\printbibliography
 \cleardoublepage
 
 %\initializeBibliography
