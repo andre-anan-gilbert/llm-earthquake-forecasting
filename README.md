@@ -12,9 +12,9 @@ This project aims to develop a real-time earthquake monitoring web application u
 
 ![dashboard](/docs/paper/img/dashboard.png)
 
-![copilot](/docs/paper/img/copilot.png)
+![copilot](/docs/paper/img/copilot-forecast-example.png)
 
-![copilot-reasoning](/docs/paper/img/explainable-ai.png)
+![copilot-reasoning](/docs/paper/img/explainable-ai-agent.png)
 
 ## Contributors
 
