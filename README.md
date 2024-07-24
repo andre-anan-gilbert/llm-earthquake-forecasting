@@ -6,7 +6,7 @@ This project aims to develop a real-time earthquake monitoring web application u
 
 - View [demo](https://drive.google.com/file/d/1mqNkPvWoyoslfvm98TLZzGBrlRcziHR6/view?usp=sharing).
 - View [paper](/docs/paper/master.pdf).
-- View [presentation](/docs/presentation.pdf)
+- View [presentation](/docs/presentation.pdf).
 - View [machine learning modeling](/ml/model.ipynb).
 
 ## Application
