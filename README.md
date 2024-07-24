@@ -8,6 +8,7 @@ This project aims to develop a real-time earthquake monitoring web application u
 - View [paper](/docs/paper/master.pdf).
 - View [presentation](/docs/presentation.pdf).
 - View [machine learning modeling](/ml/model.ipynb).
+- View [app](https://llm-earthquake-forecasting.onrender.com). **Note**: The app may take a while to start as it undergoes a cold start to save resources. Additionally, please be aware that the link may not be available indefinitely.
 
 ## Application
 
