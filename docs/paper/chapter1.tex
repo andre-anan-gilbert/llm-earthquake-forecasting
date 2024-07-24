@@ -84,18 +84,37 @@ low values tend to follow low values, while a negative coefficient suggests that
 values follow low values and vice versa \parencite[ch. 2]{box2015time}.
 
 \subsection{Trend}
-Another common used term in time series forecasting is the ``trend''. A trend describes a long-term change in the mean of the time series \parencite[ch. 5]{haben2023time}.
+
+Another commonly used term in time series forecasting is the ``trend''. A
+trend describes a long-term change in the mean of the time series \parencite[ch. 5]{haben2023time},
+as shown in Figure \ref{fig:ts_trend}.
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.75\linewidth]{img/Time Series Trend.png}
-    \caption{The time series of the temperature anomaly shows a clear upwards trend \parencite[p. 311]{mudelsee2019trend}.}
+    \caption{The time series of the temperature anomaly shows a clear upwards trend
+        \parencite[p. 311]{mudelsee2019trend}.}
     \label{fig:ts_trend}
 \end{figure}
 
-The trend is the slowest moving part of a time series, however it is crucial to understanding movement patterns influencing the time series. A trend can be calculated in different ways. One common approach is the \ac{SMA}, which calculates the mean of values within a sliding window \parencite{klinker2011exponential}. The larger the width of the sliding window, the slower the moving average adapts to (temporal) changes within the time series. Trends can be linear or quadratic for instance. A more sophisticated moving average is the \ac{EMA} which places greater significance on the most recent data points \parencite{hansun2013new}. Unlike the \ac{SMA}, which assigns equal weight to all observations in the period, the EMA applies a weighting factor that decreases exponentially \parencite{klinker2011exponential}. This makes the EMA more responsive to recent price changes, which is particularly useful in financial markets for analyzing trends and making trading decisions \parencite{dzikevivcius2010ema}.
+The trend is the slowest moving part of a time series, but it is essential
+to understanding movement patterns that influence the time series. A trend can
+be calculated in different ways. One common approach is the \ac{SMA}, which
+calculates the mean of values within a sliding window \parencite{klinker2011exponential}.
+The larger the width of the sliding window, the slower the moving average adapts
+to (temporal) changes within the time series. Trends can be linear or quadratic
+for instance. A more sophisticated moving average is the \ac{EMA} which places
+greater significance on the most recent data points \parencite{hansun2013new}.
+Unlike \ac{SMA}, which assigns equal weight to all observations in the period,
+\ac{EMA} applies a weighting factor that decreases exponentially
+\parencite{klinker2011exponential}. This makes \ac{EMA} more responsive to
+recent price changes, which is particularly useful in financial markets for
+analyzing trends and making trading decisions \parencite{dzikevivcius2010ema}.
 
-Besides computing the trend through a moving average, we can also try to identify it using a machine learning model, e.g. a linear regression. Using this trend, we can then forecast future feature values by simply extending the learned function which represents the underlying trend within the data over future timestamps.
+Besides computing the trend through a moving average, we can also try to identify
+it using a machine learning model, such as a linear regression. Using this trend, we
+can then forecast future feature values by extending the learned function
+representing the underlying trend within the data over future timestamps.
 
 \subsection{Seasonality}
 \label{subsec:seasonality}
