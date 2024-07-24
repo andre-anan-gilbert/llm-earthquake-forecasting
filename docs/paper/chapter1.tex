@@ -2,59 +2,89 @@
 \chapter{Time Series Forecasting}
 \label{ch:forecasting}
 
-Time series forecasting is a statistical technique used to predict future values based on previously observed values. This method is particularly valuable in  fields, where understanding and anticipating trends and patterns over time is crucial, such as finance \parencite{andersen2005volatility}, medicine \parencite{topol2019high}, environmental science \parencite{mudelsee2019trend}, and biology \parencite{stoffer2012special}.
+Time series forecasting is a statistical technique used to predict future values based
+on previously observed values. This method is particularly valuable in  fields, where
+understanding and anticipating trends and patterns over time is crucial, such as
+finance \parencite{andersen2005volatility}, medicine \parencite{topol2019high},
+environmental science \parencite{mudelsee2019trend}, and biology \parencite{stoffer2012special}.
 
-At its core, time series forecasting involves analyzing data points collected or recorded at specific time intervals. These data points can represent anything from daily stock prices and monthly sales figures to hourly weather readings and \ac{IOT} sensor data. The primary objective is to use this historical data to make informed predictions about future events, trends, or behaviors \parencite[ch. 1]{zhang2001investigation}.
+At its core, time series forecasting involves analyzing data points collected or
+recorded at specific time intervals. These data points can represent anything from
+daily stock prices and monthly sales figures to hourly weather readings and \ac{IOT}
+sensor data. The primary objective is to use this historical data to make informed
+predictions about future events, trends, or behaviors \parencite[ch. 1]{zhang2001investigation}.
 
-One of the key characteristics of time series data is that the observations are sequentially dependent. This temporal ordering introduces a unique challenge and opportunity: the potential to identify patterns such as seasonality, trends, and cycles \parencite{assfalg2009periodic}. For example, retail sales data often exhibit seasonal patterns, with higher sales during holidays, while economic indicators might show long-term trends reflecting economic growth or decline.
+One of the key characteristics of time series data is that the observations are
+sequentially dependent. This temporal ordering introduces a unique challenge and
+opportunity: the potential to identify patterns such as seasonality, trends, and
+cycles \parencite{assfalg2009periodic}. For example, retail sales data often
+exhibit seasonal patterns, with higher sales during holidays, while economic
+indicators might show long-term trends reflecting economic growth or decline.
 
-This chapter aims to give a detailed overview about important terminology and time series forecasting models.
+This chapter aims to give a detailed overview about important terminology and
+time series forecasting models.
 
 \section{Terminology}
-To understand time series forecasting, firstly we need to define some terminology. A time series is a set of observations recorded over time \parencite{haben2023time}, as shown in Figure \ref{tab:time_series_example}. 
+To understand time series forecasting, we first need to define some terminology.
+A time series is a set of observations recorded over time \parencite{haben2023time},
+as shown in Figure \ref{tab:time_series_example}.
 
 
 \begin{table}[h]
     \centering
     \begin{tabular}{|c|c|}
         \hline
-         \textbf{Timestamp}& \textbf{Feature\_1}\\
-         \hline
-         2000-04-01& 100\\
-         \hline
-         2000-04-02& 150\\
-         \hline
-         2000-04-03& 170\\
-         \hline
+        \textbf{Timestamp} & \textbf{Feature\_1} \\
+        \hline
+        2000-04-01         & 100                 \\
+        \hline
+        2000-04-02         & 150                 \\
+        \hline
+        2000-04-03         & 170                 \\
+        \hline
     \end{tabular}
     \caption{A simple example for a time series.}
     \label{tab:time_series_example}
 \end{table}
 
-There are two unique features in time series analysis: time-step features and lag features \parencite{haben2023time}. Time-step features indicate the interval between two timestamps, while lag features represent the difference in a feature metric compared to the previous timestamp (Table \ref{tab:time_series_extended}).
+There are two unique features in time series analysis: time-step features and lag
+features \parencite{haben2023time}. Time-step features indicate the interval between
+two timestamps, while lag features represent the difference in a feature metric
+compared to the previous timestamp (Table \ref{tab:time_series_extended}).
 
 
 \begin{table}[h]
-   \centering
+    \centering
     \begin{tabular}{|c|c|c|c|}
         \hline
-         \textbf{Timestamp}&  \textbf{Feature\_1}&  \textbf{Time-step}& \textbf{Lag}\\
-         \hline
-         2000-04-01&  100&  NaN& NaN\\
-         \hline
-         2000-04-02&  150&  1& 100\\
-         \hline
-         2000-04-03&  170&  1& 150\\
-         \hline
+        \textbf{Timestamp} & \textbf{Feature\_1} & \textbf{Time-step} & \textbf{Lag} \\
+        \hline
+        2000-04-01         & 100                 & 0                  & NaN          \\
+        \hline
+        2000-04-02         & 150                 & 1                  & 100          \\
+        \hline
+        2000-04-03         & 170                 & 2                  & 150          \\
+        \hline
     \end{tabular}
     \caption{A simple time series extended with the time-step and lag feature.}
     \label{tab:time_series_extended}
 \end{table}
 
-Time-step features enable modeling for time dependence. E.g. if the time-step feature counts the days within the month, this can help identifying seasonal dependencies of \textit{Feature\_1} within the month (Table \ref{tab:time_series_extended}). Lag features on the other hand aid in identifying serial dependence, i.e. the correlation of current feature values with past feature values. Hence, serial dependence can test the hypothesis whether past feature values influence current feature values. \textcite{box2015time} defined the term autocorrelation as a measure of correlation between the values of a time series at different time lags. A positive autocorrelation coefficient at a certain lag indicates that high values tend to follow high values and low values tend to follow low values, while a negative coefficient suggests that high values follow low values and vice versa \parencite[ch. 2]{box2015time}.
+Time step features allow for modeling time dependence. For example, if the time-step
+feature counts the days within the month, this can help identifying seasonal
+dependencies of \textit{Feature\_1} within the month (Table \ref{tab:time_series_extended}).
+On the other hand, lag features help identify serial dependence, meaning the correlation of
+current feature values with past feature values. Therefore, serial dependence can test the
+hypothesis whether past feature values influence current feature values.
+
+\textcite{box2015time} defined the term autocorrelation as a measure of correlation
+between the values of a time series at different time lags. A positive autocorrelation
+coefficient at a certain lag indicates that high values tend to follow high values and
+low values tend to follow low values, while a negative coefficient suggests that high
+values follow low values and vice versa \parencite[ch. 2]{box2015time}.
 
 \subsection{Trend}
-Another common used term in time series forecasting is the ``trend''. A trend describes a long-term change in the mean of the time series \parencite[ch. 5]{haben2023time}. 
+Another common used term in time series forecasting is the ``trend''. A trend describes a long-term change in the mean of the time series \parencite[ch. 5]{haben2023time}.
 
 \begin{figure}[h]
     \centering
@@ -84,18 +114,18 @@ To identify seasonality, seasonal plots and indicators can be used. A seasonal p
     \centering
     \begin{tabular}{|c|c|c|c|c|c|c|}
         \hline
-         \textbf{Timestamp} & \textbf{Feature\_1} & \textbf{Monday} & \textbf{Tuesday} & \textbf{Wednesday} & \textbf{Thursday} & \textbf{Friday} \\
-         \hline
-         2000-04-01 & 100 & 1 & 0 & 0 & 0 & 0 \\
-         \hline
-         2000-04-02 & 150 & 0 & 1 & 0 & 0 & 0 \\
-         \hline
-         2000-04-03 & 170 & 0 & 0 & 1 & 0 & 0 \\
-         \hline
-         2000-04-04 & 180 & 0 & 0 & 0 & 1 & 0 \\
-         \hline
-         2000-04-05 & 90 & 0 & 0 & 0 & 0 & 1 \\
-         \hline
+        \textbf{Timestamp} & \textbf{Feature\_1} & \textbf{Monday} & \textbf{Tuesday} & \textbf{Wednesday} & \textbf{Thursday} & \textbf{Friday} \\
+        \hline
+        2000-04-01         & 100                 & 1               & 0                & 0                  & 0                 & 0               \\
+        \hline
+        2000-04-02         & 150                 & 0               & 1                & 0                  & 0                 & 0               \\
+        \hline
+        2000-04-03         & 170                 & 0               & 0                & 1                  & 0                 & 0               \\
+        \hline
+        2000-04-04         & 180                 & 0               & 0                & 0                  & 1                 & 0               \\
+        \hline
+        2000-04-05         & 90                  & 0               & 0                & 0                  & 0                 & 1               \\
+        \hline
     \end{tabular}
     \caption{A simple time series with seasonal indicators for the weekdays.}
     \label{tab:time_series_simple}
@@ -108,18 +138,18 @@ Another notable mention are cyclic time series, a type of data sequence characte
 
 \section{Forecasting}
 \label{sec:Forecasting}
-Time series forecasting is a statistical method used to predict future values based on previously observed data points \parencite[ch. 5]{box2015time}. While there are methods such as \ac{ARIMA} or exponential smoothing \parencite[ch. 5]{box2015time}, one can also use machine learning algorithms to examine the dependencies and relationships between different time points, in order to learn from the historical data to predict future values. 
+Time series forecasting is a statistical method used to predict future values based on previously observed data points \parencite[ch. 5]{box2015time}. While there are methods such as \ac{ARIMA} or exponential smoothing \parencite[ch. 5]{box2015time}, one can also use machine learning algorithms to examine the dependencies and relationships between different time points, in order to learn from the historical data to predict future values.
 
-Generally, these machine learning algorithms optimize their model parameters to minimize forecasting errors \parencite[ch. 5]{box2015time}. Which parameters they optimize is dependent on the underlying model. Popular models will be covered in Chapter \ref{sec:forecasting_models}. 
+Generally, these machine learning algorithms optimize their model parameters to minimize forecasting errors \parencite[ch. 5]{box2015time}. Which parameters they optimize is dependent on the underlying model. Popular models will be covered in Chapter \ref{sec:forecasting_models}.
 
 Typical examples for those forecasting erros are: the \ac{MAE}, which calculates the average absolute difference between the predicted values and the actual values; the \ac{MSE}, which computes the average of the squared differences between the predicted and actual values (squaring the errors penalizes larger errors more significantly, making MSE sensitive to outliers); the \ac{RMSE} which is the square root of the \ac{MSE}, providing an error measure in the same units as the original data and the \ac{MAPE} which expresses the error as a percentage of the actual values, which can be useful for comparing forecast accuracy across different datasets or scales. Especially for regressions, a common metric is the R-squared (R2) Score, which indicates how well the model's predictions approximate the actual data compared to a simple mean prediction. It ranges from 0 to 1, where 1 indicates a perfect fit. Moreover, the R2 Score can also be adjusted to account for the number of predictors in the model, providing a more realistic evaluation of model fit. This metric is then referred to as the adjusted R2 Score.
 
 \section{Feature Engineering}
-Feature engineering is crucial in timeseries forecasting, involving techniques such as partial autocorrelation and autocorrelation analysis to identify relevant lags. Autocorrelation measures how current values in the series relate to past values, while partial autocorrelation isolates the relationship of specific lags, which helps in the selection of relevant features for the model \parencite{box2015time}. 
+Feature engineering is crucial in timeseries forecasting, involving techniques such as partial autocorrelation and autocorrelation analysis to identify relevant lags. Autocorrelation measures how current values in the series relate to past values, while partial autocorrelation isolates the relationship of specific lags, which helps in the selection of relevant features for the model \parencite{box2015time}.
 
-Further, one can also create new features such as lagged variables, which are created by shifting the original timeseries data by one or more periods. The lags can be created heuristically e.g. 1, 2 and 12 months. Consequently, \ac{PACF} can be used to identify significant lags that should be included as features \parencite[ch. 6]{hyndman2018forecasting}. These lagged variables can be combined with rolling windows which calculate statistics (e.g. mean, standard deviation, sum, etc.) over a specific timeframe. After creating lagged variables, the rolling windows can be used to calculate rolling statistics on the features and capture more complex patterns \parencite[ch. 6]{hyndman2018forecasting}. 
+Further, one can also create new features such as lagged variables, which are created by shifting the original timeseries data by one or more periods. The lags can be created heuristically e.g. 1, 2 and 12 months. Consequently, \ac{PACF} can be used to identify significant lags that should be included as features \parencite[ch. 6]{hyndman2018forecasting}. These lagged variables can be combined with rolling windows which calculate statistics (e.g. mean, standard deviation, sum, etc.) over a specific timeframe. After creating lagged variables, the rolling windows can be used to calculate rolling statistics on the features and capture more complex patterns \parencite[ch. 6]{hyndman2018forecasting}.
 
-Additionally, it might be useful to include binary or numerical features representing the occurrence of significant external events, e.g., holidays or economic shifts \parencite[ch. 3]{hyndman2018forecasting}. Furthermore, live data potentially correlated with the predicted value can be incorporated as features. 
+Additionally, it might be useful to include binary or numerical features representing the occurrence of significant external events, e.g., holidays or economic shifts \parencite[ch. 3]{hyndman2018forecasting}. Furthermore, live data potentially correlated with the predicted value can be incorporated as features.
 
 \section{Forecasting Models}
 \label{sec:forecasting_models}
@@ -127,29 +157,29 @@ Regarding time series forecasting models, one can distinguish between global and
 % Talk about local vs. global models. We could then add a table of models, short description, and local/global to cover them
 
 \begin{table}[h]
-\centering
-\begin{tabular}{ll}
-\toprule
-\textbf{Model type} & \textbf{Can be used for} \\
-\midrule
-linear regression & local \\
-\midrule
-ARIMA & local\\
-\midrule
-ETS & local\\
-\midrule 
-tree  & local/global \\
-\midrule
-RNN & local/global \\
-\midrule
-LSTM & local/global \\
-\midrule
-transformer based & global \\
+    \centering
+    \begin{tabular}{ll}
+        \toprule
+        \textbf{Model type} & \textbf{Can be used for} \\
+        \midrule
+        linear regression   & local                    \\
+        \midrule
+        ARIMA               & local                    \\
+        \midrule
+        ETS                 & local                    \\
+        \midrule
+        tree                & local/global             \\
+        \midrule
+        RNN                 & local/global             \\
+        \midrule
+        LSTM                & local/global             \\
+        \midrule
+        transformer based   & global                   \\
 
-\bottomrule
-\end{tabular}
-\caption{Timeseries Forecasting Models}
-\label{tab:timeseries_models}
+        \bottomrule
+    \end{tabular}
+    \caption{Timeseries Forecasting Models}
+    \label{tab:timeseries_models}
 \end{table}
 
 % Maybe talk about different algorithms that can be used for forecasting (regression, trees, RNN, LSTM)
